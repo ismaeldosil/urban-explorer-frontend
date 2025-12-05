@@ -1,0 +1,97 @@
+name: UI Component Implementation
+description: Implement a UI component from the design system
+title: "[COMP] "
+labels: ["type: feature", "component: UI", "status: ready"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for implementing UI components from UI-COMPONENT-TICKETS.md
+
+  - type: input
+    id: component-id
+    attributes:
+      label: Component ID
+      description: Reference ID from tickets
+      placeholder: "COMP-001"
+    validations:
+      required: true
+
+  - type: input
+    id: component-name
+    attributes:
+      label: Component Name
+      description: Name of the component
+      placeholder: "LocationCard"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0 - Critical
+        - P1 - High
+        - P2 - Medium
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Brief description from the ticket
+    validations:
+      required: true
+
+  - type: textarea
+    id: design-specs
+    attributes:
+      label: Design Specifications
+      description: Key design specs (dimensions, colors, typography)
+      placeholder: |
+        - Dimensions: ...
+        - Colors: ...
+        - Typography: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: props
+    attributes:
+      label: Props/Inputs
+      description: Component props from the ticket
+      placeholder: |
+        | Prop | Type | Default |
+        |------|------|---------|
+        | ... | ... | ... |
+
+  - type: textarea
+    id: events
+    attributes:
+      label: Events/Outputs
+      description: Component events from the ticket
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: From the ticket
+      placeholder: |
+        - [ ] Criterion from ticket
+        - [ ] Tests written (TDD)
+        - [ ] Storybook story created
+        - [ ] Accessible (WCAG AA)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: sprint
+    attributes:
+      label: Target Sprint
+      options:
+        - Sprint 1
+        - Sprint 2
+        - Sprint 3
+        - Sprint 4
