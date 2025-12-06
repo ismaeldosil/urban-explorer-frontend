@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.npm
+
+# Build outputs
+dist/
+www/
+build/
+.angular/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+**/environments/environment.ts
+**/environments/environment.prod.ts
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Capacitor
+android/
+ios/
+*.keystore
+
+# Misc
+.tmp/
+.cache/
+*.tgz
+
+# MCP config (contains local paths)
+.mcp.json

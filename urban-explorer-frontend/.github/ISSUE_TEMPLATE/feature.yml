@@ -1,0 +1,80 @@
+name: Feature Request
+description: Request a new feature for Urban Explorer
+title: "[FEATURE] "
+labels: ["type: feature", "status: ready"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for submitting a feature request! Please fill out the details below.
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature?
+      options:
+        - P0 - Critical (blocking)
+        - P1 - High
+        - P2 - Medium
+        - P3 - Low
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which component does this affect?
+      options:
+        - UI Components
+        - Navigation
+        - Authentication
+        - Map Features
+        - State Management
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Clear description of the feature
+      placeholder: As a user, I want to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: List the criteria for this feature to be considered complete
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Criterion 3
+    validations:
+      required: true
+
+  - type: textarea
+    id: design-reference
+    attributes:
+      label: Design Reference
+      description: Link to mockups, tickets, or documentation
+      placeholder: See UI-COMPONENT-TICKETS.md COMP-001
+
+  - type: dropdown
+    id: sprint
+    attributes:
+      label: Target Sprint
+      description: Which sprint should this be completed in?
+      options:
+        - Sprint 0 (Setup)
+        - Sprint 1 (Auth)
+        - Sprint 2 (Core Nav)
+        - Sprint 3 (Features)
+        - Sprint 4 (Profile)
+        - Sprint 5 (Polish)
+        - Sprint 6 (Launch)
+        - Backlog

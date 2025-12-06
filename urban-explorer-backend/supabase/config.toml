@@ -1,0 +1,19 @@
+[api]
+enabled = true
+port = 54321
+
+[db]
+port = 54322
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+site_url = "urbanexplorer://auth/callback"
+additional_redirect_urls = ["http://localhost:8100"]
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true

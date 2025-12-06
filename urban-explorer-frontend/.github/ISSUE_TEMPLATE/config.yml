@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/ismaeldosil/urban-explorer-docs
+    about: Check the documentation for specs and guides
+  - name: Project Board
+    url: https://github.com/users/ismaeldosil/projects/3
+    about: View the project board for current sprint status

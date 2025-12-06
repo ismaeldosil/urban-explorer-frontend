@@ -1,0 +1,171 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>Mi Perfil</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="navigateToSettings()">
+        <ion-icon name="settings-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="loading-container">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Cargando perfil...</p>
+    </div>
+  } @else {
+    <!-- Profile Header -->
+    <section class="profile-header">
+      <div class="avatar-container">
+        @if (currentUser()?.avatarUrl) {
+          <ion-avatar class="user-avatar">
+            <img [src]="currentUser()?.avatarUrl" [alt]="displayName()" />
+          </ion-avatar>
+        } @else {
+          <div class="avatar-placeholder">
+            <span class="initials">{{ userInitials() }}</span>
+          </div>
+        }
+        <button class="edit-avatar-btn" (click)="navigateToEditProfile()">
+          <ion-icon name="camera-outline"></ion-icon>
+        </button>
+      </div>
+
+      <h1 class="user-name">{{ displayName() }}</h1>
+      <p class="user-email">{{ userEmail() }}</p>
+
+      @if (currentUser()?.bio) {
+        <p class="user-bio">{{ currentUser()?.bio }}</p>
+      }
+
+      <div class="user-meta">
+        <span class="meta-item">
+          <ion-icon name="location-outline"></ion-icon>
+          {{ userLocation() }}
+        </span>
+        @if (memberSince()) {
+          <span class="meta-item">
+            <ion-icon name="flash-outline"></ion-icon>
+            Miembro desde {{ memberSince() }}
+          </span>
+        }
+      </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <ion-icon name="map-outline"></ion-icon>
+          </div>
+          <div class="stat-value">{{ stats().placesVisited }}</div>
+          <div class="stat-label">Lugares</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">
+            <ion-icon name="star-outline"></ion-icon>
+          </div>
+          <div class="stat-value">{{ stats().reviewsWritten }}</div>
+          <div class="stat-label">Reviews</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">
+            <ion-icon name="trophy-outline"></ion-icon>
+          </div>
+          <div class="stat-value">{{ stats().totalPoints }}</div>
+          <div class="stat-label">Puntos</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Badges Section -->
+    @if (hasBadges()) {
+      <section class="badges-section">
+        <div class="section-header">
+          <h2>Mis Logros</h2>
+          <ion-badge color="primary">{{ badges().length }}</ion-badge>
+        </div>
+
+        <div class="badges-grid">
+          @for (badge of badges(); track badge.id) {
+            <div class="badge-card" [class.earned]="badge.earnedAt">
+              <div class="badge-icon" [attr.data-type]="badge.type">
+                <ion-icon [name]="getBadgeIcon(badge.type)"></ion-icon>
+              </div>
+              <div class="badge-info">
+                <span class="badge-name">{{ badge.name }}</span>
+                <span class="badge-description">{{ badge.description }}</span>
+                @if (badge.progress && badge.progress < 100) {
+                  <div class="badge-progress">
+                    <div class="progress-bar">
+                      <div class="progress-fill" [style.width.%]="badge.progress"></div>
+                    </div>
+                    <span class="progress-text">{{ badge.progress }}%</span>
+                  </div>
+                }
+              </div>
+              @if (badge.earnedAt) {
+                <ion-icon name="shield-checkmark-outline" class="earned-icon"></ion-icon>
+              }
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Menu Options -->
+    <section class="menu-section">
+      <ion-list lines="none">
+        <ion-item button detail (click)="navigateToEditProfile()">
+          <ion-icon name="person-outline" slot="start"></ion-icon>
+          <ion-label>
+            <h3>Editar perfil</h3>
+            <p>Actualiza tu informacion personal</p>
+          </ion-label>
+          <ion-icon name="chevron-forward-outline" slot="end"></ion-icon>
+        </ion-item>
+
+        <ion-item button detail (click)="navigateToMyReviews()">
+          <ion-icon name="create-outline" slot="start"></ion-icon>
+          <ion-label>
+            <h3>Mis reviews</h3>
+            <p>Ver todas tus opiniones</p>
+          </ion-label>
+          <ion-icon name="chevron-forward-outline" slot="end"></ion-icon>
+        </ion-item>
+
+        <ion-item button detail (click)="navigateToSettings()">
+          <ion-icon name="settings-outline" slot="start"></ion-icon>
+          <ion-label>
+            <h3>Configuracion</h3>
+            <p>Notificaciones, privacidad y mas</p>
+          </ion-label>
+          <ion-icon name="chevron-forward-outline" slot="end"></ion-icon>
+        </ion-item>
+      </ion-list>
+    </section>
+
+    <!-- Logout Button -->
+    <section class="logout-section">
+      <ion-button
+        expand="block"
+        fill="outline"
+        color="danger"
+        (click)="onLogout()"
+      >
+        <ion-icon name="log-out-outline" slot="start"></ion-icon>
+        Cerrar sesion
+      </ion-button>
+    </section>
+  }
+</ion-content>
