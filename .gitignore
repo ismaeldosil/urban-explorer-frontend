@@ -44,8 +44,7 @@ ios/
 # MCP config (contains local paths)
 .mcp.json
 
-# Claude Code configuration (local only)
-urban-explorer-docs/
+# Claude Code symlinks (local only - urban-explorer-docs is a separate private repo)
 CLAUDE.md
 .claude
 **/CLAUDE.md
