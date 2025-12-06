@@ -1,0 +1,67 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <div class="search-wrapper" (click)="goToSearch()">
+      <app-search-input
+        placeholder="Buscar lugares..."
+        [disabled]="true"
+      ></app-search-input>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <!-- Category Chips -->
+  <ion-segment
+    scrollable
+    [value]="selectedCategory()"
+    (ionChange)="onCategoryChange($event)"
+    class="category-segment"
+  >
+    @for (category of categories; track category.id) {
+      <ion-segment-button [value]="category.id">
+        <ion-icon [name]="category.icon"></ion-icon>
+        <ion-label>{{ category.name }}</ion-label>
+      </ion-segment-button>
+    }
+  </ion-segment>
+
+  <!-- Map Container -->
+  <div class="map-container">
+    <div #mapContainer class="map"></div>
+
+    <!-- Loading Overlay -->
+    @if (isLoading()) {
+      <div class="loading-overlay">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <p>Cargando...</p>
+      </div>
+    }
+
+    <!-- Error Message -->
+    @if (errorMessage()) {
+      <div class="error-toast">
+        <ion-icon name="warning-outline"></ion-icon>
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+  </div>
+
+  <!-- FAB for location -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="centerOnUser()" [disabled]="isLoading()">
+      @if (isLoading()) {
+        <ion-spinner name="dots" color="primary"></ion-spinner>
+      } @else {
+        <ion-icon name="locate-outline"></ion-icon>
+      }
+    </ion-fab-button>
+  </ion-fab>
+
+  <!-- Location Count Badge -->
+  @if (filteredLocations().length > 0) {
+    <div class="location-count-badge">
+      <ion-icon name="location-outline"></ion-icon>
+      <span>{{ filteredLocations().length }} lugares</span>
+    </div>
+  }
+</ion-content>

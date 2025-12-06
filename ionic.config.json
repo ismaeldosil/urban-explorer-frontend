@@ -1,0 +1,7 @@
+{
+  "name": "urban-explorer-temp",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

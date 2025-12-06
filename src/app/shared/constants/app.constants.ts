@@ -1,0 +1,19 @@
+export const APP_CONSTANTS = {
+  APP_NAME: 'Urban Explorer',
+  APP_VERSION: '1.0.0',
+  DEFAULT_SEARCH_RADIUS_KM: 5,
+  MAX_SEARCH_RADIUS_KM: 50,
+  MIN_PASSWORD_LENGTH: 8,
+  MAX_REVIEW_LENGTH: 500,
+  MAX_IMAGES_PER_REVIEW: 5,
+  DEFAULT_LOCATION_LIMIT: 20,
+  RATING_MIN: 1,
+  RATING_MAX: 5,
+  MAP_DEFAULT_ZOOM: 15,
+  STORAGE_KEYS: {
+    AUTH_TOKEN: 'auth_token',
+    USER_PROFILE: 'user_profile',
+    HAS_SEEN_ONBOARDING: 'has_seen_onboarding',
+    RECENT_SEARCHES: 'recent_searches',
+  },
+} as const;
