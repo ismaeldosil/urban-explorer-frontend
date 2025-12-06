@@ -13,6 +13,21 @@ export const routes: Routes = [
       import('./presentation/pages/auth/auth.routes').then((m) => m.AUTH_ROUTES),
   },
   {
+    path: 'location/:id',
+    loadComponent: () =>
+      import('./presentation/pages/location-detail/location-detail.page').then(
+        (m) => m.LocationDetailPage
+      ),
+  },
+  {
+    path: 'location/:id/review',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./presentation/pages/location-detail/write-review.page').then(
+        (m) => m.WriteReviewPage
+      ),
+  },
+  {
     path: 'profile',
     canActivate: [authGuard],
     children: [
