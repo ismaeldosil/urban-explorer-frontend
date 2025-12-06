@@ -1,12 +1,14 @@
 import { Injectable } from '@angular/core';
-import { createClient, SupabaseClient, Session, User } from '@supabase/supabase-js';
+import { createClient, SupabaseClient, Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 import { environment } from '@env';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { capacitorSupabaseStorage } from '../adapters/capacitor-supabase-storage.adapter';
 
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
   private supabase: SupabaseClient;
   private sessionSubject = new BehaviorSubject<Session | null>(null);
+  private initialized = false;
 
   constructor() {
     this.supabase = createClient(
@@ -14,12 +16,62 @@ export class SupabaseService {
       environment.supabaseKey,
       {
         auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-          detectSessionInUrl: false,
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: true,
+          storage: capacitorSupabaseStorage,
+          storageKey: 'urban-explorer-auth',
         },
       }
     );
+
+    this.initializeAuth();
+  }
+
+  /**
+   * Initialize auth state listener and restore session from storage.
+   * This ensures the session is restored on app start.
+   */
+  private async initializeAuth(): Promise<void> {
+    // Listen to auth state changes
+    this.supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      console.log('Auth state changed:', event, session?.user?.email);
+      this.sessionSubject.next(session);
+    });
+
+    // Restore existing session from storage
+    try {
+      const { data: { session }, error } = await this.supabase.auth.getSession();
+      if (error) {
+        console.error('Error restoring session:', error);
+        this.sessionSubject.next(null);
+      } else {
+        this.sessionSubject.next(session);
+      }
+    } catch (error) {
+      console.error('Failed to restore session:', error);
+      this.sessionSubject.next(null);
+    }
+
+    this.initialized = true;
+  }
+
+  /**
+   * Returns a promise that resolves when the auth state has been initialized.
+   * Use this to wait for session restoration before proceeding.
+   */
+  async waitForInitialization(): Promise<void> {
+    if (this.initialized) return;
+
+    // Wait for first emission from session subject
+    return new Promise((resolve) => {
+      const subscription = this.sessionSubject.subscribe(() => {
+        if (this.initialized) {
+          subscription.unsubscribe();
+          resolve();
+        }
+      });
+    });
   }
 
   get client(): SupabaseClient {
