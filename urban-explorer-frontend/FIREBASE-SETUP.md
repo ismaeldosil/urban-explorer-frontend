@@ -2,6 +2,17 @@
 
 This guide explains how to configure Firebase for Urban Explorer releases.
 
+## Important: ONE Project, Multiple Apps
+
+Firebase uses a single project to manage all platforms:
+
+```
+Firebase Project: urban-explorer
+├── Android App (app.urbanexplorer)
+├── iOS App (app.urbanexplorer)
+└── Web App (Firebase Hosting)
+```
+
 ## Prerequisites
 
 - Google account
@@ -11,27 +22,45 @@ This guide explains how to configure Firebase for Urban Explorer releases.
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
 2. Click "Add project"
-3. Name it: `urban-explorer-app` (or your preferred name)
+3. Name it: `urban-explorer` (this is the project ID)
 4. Enable/disable Google Analytics as needed
 5. Click "Create project"
 
-## Step 2: Configure Firebase Hosting
+## Step 2: Add Apps to the Project
+
+### Add Android App
+1. In Project Overview, click "Add app" → Android icon
+2. Package name: `app.urbanexplorer`
+3. App nickname: `Urban Explorer Android`
+4. Download `google-services.json` (optional, for analytics)
+5. Note the **App ID**: `1:XXXXXXXXX:android:XXXXXXXX`
+
+### Add iOS App (for future use)
+1. Click "Add app" → iOS icon
+2. Bundle ID: `app.urbanexplorer`
+3. App nickname: `Urban Explorer iOS`
+4. Download `GoogleService-Info.plist` (optional)
+5. Note the **App ID**: `1:XXXXXXXXX:ios:XXXXXXXX`
+
+### Add Web App
+1. Click "Add app" → Web icon
+2. App nickname: `Urban Explorer Web`
+3. This enables Firebase Hosting
+
+## Step 3: Configure Firebase Hosting
 
 1. In Firebase Console, go to "Build" > "Hosting"
 2. Click "Get started"
 3. Follow the setup wizard (you can skip the CLI steps, we use GitHub Actions)
 
-## Step 3: Configure App Distribution
+## Step 4: Configure App Distribution
 
 1. In Firebase Console, go to "Release & Monitor" > "App Distribution"
 2. Click "Get started"
-3. Add your Android app:
-   - Package name: `app.urbanexplorer`
-   - App nickname: `Urban Explorer`
-4. Download the `google-services.json` file
-5. Create a tester group named "testers"
+3. Select your Android app
+4. Create a tester group named "testers"
 
-## Step 4: Get Firebase Configuration Values
+## Step 5: Get Firebase Configuration Values
 
 ### Project ID
 Found in Project Settings > General > Project ID
@@ -47,7 +76,7 @@ Format: `1:123456789:android:abcdef123456`
 3. Download the JSON file
 4. This will be used as `FIREBASE_SERVICE_ACCOUNT` secret
 
-## Step 5: Configure GitHub Secrets
+## Step 6: Configure GitHub Secrets
 
 Go to your GitHub repository > Settings > Secrets and variables > Actions
 
@@ -59,7 +88,7 @@ Add these secrets:
 | `FIREBASE_ANDROID_APP_ID` | `1:xxx:android:xxx` | Android app ID from Firebase |
 | `FIREBASE_SERVICE_ACCOUNT` | `{...json...}` | Full content of service account JSON |
 
-## Step 6: Update .firebaserc
+## Step 7: Update .firebaserc
 
 Edit `.firebaserc` with your actual project ID:
 
