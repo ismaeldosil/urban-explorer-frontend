@@ -38,3 +38,76 @@
 
 /* Leaflet CSS */
 @import 'leaflet/dist/leaflet.css';
+
+/* Custom Location Marker Styles for Leaflet */
+.custom-location-marker {
+  background: transparent !important;
+  border: none !important;
+
+  .marker-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+
+    &:hover,
+    &.selected {
+      transform: scale(1.2) translateY(-4px);
+      z-index: 1000 !important;
+    }
+
+    &.selected .marker-pin {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  .marker-pin {
+    width: 36px;
+    height: 36px;
+    border-radius: 50% 50% 50% 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(-45deg);
+    border: 2px solid white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: box-shadow 0.2s ease;
+
+    ion-icon {
+      transform: rotate(45deg);
+      font-size: 18px;
+      color: white;
+    }
+  }
+
+  .marker-shadow {
+    width: 14px;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 50%;
+    margin-top: 2px;
+  }
+
+  .marker-rating {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 6px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+    font-size: 10px;
+    font-weight: 600;
+
+    ion-icon {
+      font-size: 10px;
+      color: #fbbf24;
+    }
+  }
+}
