@@ -149,7 +149,7 @@ import { Email } from '@core/value-objects/email.vo';
               label="Location"
               labelPlacement="stacked"
               [(ngModel)]="location"
-              placeholder="e.g., Buenos Aires, Argentina"
+              placeholder="e.g., New York, USA"
               [maxlength]="100"
               (ionInput)="onInputChange()"
             ></ion-input>

@@ -18,6 +18,10 @@ interface ReviewDTO {
     username: string;
     avatar_url?: string;
   };
+  locations?: {
+    name: string;
+    image_url?: string;
+  };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -163,7 +167,7 @@ export class SupabaseReviewRepository implements IReviewRepository {
     }
   }
 
-  async getByUserId(userId: string, limit?: number): Promise<Result<ReviewEntity[]>> {
+  async getByUserId(userId: string, limit?: number): Promise<Result<any[]>> {
     try {
       let query = this.supabase
         .from('reviews')
@@ -181,7 +185,19 @@ export class SupabaseReviewRepository implements IReviewRepository {
         return Result.fail(new Error(error.message));
       }
 
-      const reviews = (data || []).map((dto: ReviewDTO) => this.mapToEntity(dto));
+      const reviews = (data || []).map((dto: any) => ({
+        id: dto.id,
+        locationId: dto.location_id,
+        userId: dto.user_id,
+        rating: dto.rating,
+        comment: dto.comment,
+        photos: dto.photos || [],
+        tags: dto.tags || [],
+        createdAt: new Date(dto.created_at),
+        updatedAt: new Date(dto.updated_at),
+        locationName: dto.locations?.name,
+        locationImageUrl: dto.locations?.image_url,
+      }));
       return Result.ok(reviews);
     } catch (error) {
       return Result.fail(error as Error);
