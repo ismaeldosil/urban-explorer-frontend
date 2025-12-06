@@ -1,26 +1,24 @@
 import { Injectable } from '@angular/core';
-import { IFavoriteRepository } from '@core/repositories/favorite.repository';
-import { FavoriteEntity } from '@core/entities/favorite.entity';
 import { SupabaseService } from '../services/supabase.service';
 import { DomainError } from '@core/errors/domain-error';
-
-export type FavoriteResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: Error };
+import { IFavoriteRepository } from '@core/repositories/favorite.repository';
+import { FavoriteEntity } from '@core/entities/favorite.entity';
+import { Result } from '@shared/types/result.type';
 
 export interface FavoriteWithLocation extends FavoriteEntity {
-  location: {
+  location?: {
     id: string;
     name: string;
     description: string;
-    category: string;
-    category_name?: string;
-    imageUrl?: string;
-    photos?: string[];
-    rating: number;
-    review_count?: number;
-    price_level?: number;
     address: string;
+    category_id: string;
+    category_name?: string;
+    rating: number;
+    review_count: number;
+    price_level: number;
+    photos: string[];
+    latitude: number;
+    longitude: number;
   };
 }
 
@@ -28,47 +26,91 @@ export interface FavoriteWithLocation extends FavoriteEntity {
 export class SupabaseFavoriteRepository implements IFavoriteRepository {
   constructor(private supabase: SupabaseService) {}
 
-  async getByUserId(userId: string): Promise<FavoriteResult<FavoriteEntity[]>> {
+  async getByUserId(userId: string): Promise<Result<FavoriteEntity[]>> {
     try {
       const { data, error } = await this.supabase
         .from('favorites')
-        .select('*')
+        .select(`
+          id,
+          user_id,
+          location_id,
+          created_at,
+          locations (
+            id,
+            name,
+            description,
+            address,
+            category_id,
+            rating,
+            review_count,
+            price_level,
+            photos,
+            latitude,
+            longitude,
+            categories (name)
+          )
+        `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) {
-        return { success: false, error: new DomainError(error.message, 'REPOSITORY_ERROR') };
+        return Result.fail(new DomainError(error.message, 'REPOSITORY_ERROR'));
       }
 
-      const favorites = (data || []).map(item => this.mapToEntity(item));
-      return { success: true, data: favorites };
+      const favorites: FavoriteWithLocation[] = (data || []).map((item: any) => ({
+        id: item.id,
+        userId: item.user_id,
+        locationId: item.location_id,
+        createdAt: new Date(item.created_at),
+        location: item.locations ? {
+          id: item.locations.id,
+          name: item.locations.name,
+          description: item.locations.description,
+          address: item.locations.address,
+          category_id: item.locations.category_id,
+          category_name: item.locations.categories?.name,
+          rating: item.locations.rating || 0,
+          review_count: item.locations.review_count || 0,
+          price_level: item.locations.price_level || 1,
+          photos: item.locations.photos || [],
+          latitude: item.locations.latitude,
+          longitude: item.locations.longitude,
+        } : undefined,
+      }));
+
+      return Result.ok(favorites);
     } catch (error) {
-      return { success: false, error: error as Error };
+      return Result.fail(error as Error);
     }
   }
 
-  async create(userId: string, locationId: string): Promise<FavoriteResult<FavoriteEntity>> {
+  async create(userId: string, locationId: string): Promise<Result<FavoriteEntity>> {
     try {
       const { data, error } = await this.supabase
         .from('favorites')
         .insert({
           user_id: userId,
-          location_id: locationId
+          location_id: locationId,
         })
         .select()
         .single();
 
       if (error) {
-        return { success: false, error: new DomainError(error.message, 'REPOSITORY_ERROR') };
+        return Result.fail(new DomainError(error.message, 'REPOSITORY_ERROR'));
       }
 
-      return { success: true, data: this.mapToEntity(data) };
+      return Result.ok({
+        id: data.id,
+        userId: data.user_id,
+        locationId: data.location_id,
+        createdAt: new Date(data.created_at),
+      });
     } catch (error) {
-      return { success: false, error: error as Error };
+      return Result.fail(error as Error);
     }
   }
 
-  async delete(userId: string, locationId: string): Promise<FavoriteResult<void>> {
+  async delete(userId: string, locationId: string): Promise<Result<void>> {
     try {
       const { error } = await this.supabase
         .from('favorites')
@@ -77,16 +119,16 @@ export class SupabaseFavoriteRepository implements IFavoriteRepository {
         .eq('location_id', locationId);
 
       if (error) {
-        return { success: false, error: new DomainError(error.message, 'REPOSITORY_ERROR') };
+        return Result.fail(new DomainError(error.message, 'REPOSITORY_ERROR'));
       }
 
-      return { success: true, data: undefined };
+      return Result.ok(undefined);
     } catch (error) {
-      return { success: false, error: error as Error };
+      return Result.fail(error as Error);
     }
   }
 
-  async isFavorite(userId: string, locationId: string): Promise<FavoriteResult<boolean>> {
+  async isFavorite(userId: string, locationId: string): Promise<Result<boolean>> {
     try {
       const { data, error } = await this.supabase
         .from('favorites')
@@ -96,21 +138,12 @@ export class SupabaseFavoriteRepository implements IFavoriteRepository {
         .maybeSingle();
 
       if (error) {
-        return { success: false, error: new DomainError(error.message, 'REPOSITORY_ERROR') };
+        return Result.fail(new DomainError(error.message, 'REPOSITORY_ERROR'));
       }
 
-      return { success: true, data: !!data };
+      return Result.ok(!!data);
     } catch (error) {
-      return { success: false, error: error as Error };
+      return Result.fail(error as Error);
     }
-  }
-
-  private mapToEntity(data: any): FavoriteEntity {
-    return {
-      id: data.id,
-      userId: data.user_id,
-      locationId: data.location_id,
-      createdAt: new Date(data.created_at)
-    };
   }
 }

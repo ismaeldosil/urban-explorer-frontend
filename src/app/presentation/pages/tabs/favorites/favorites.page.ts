@@ -5,8 +5,7 @@ import { Router } from '@angular/router';
 import { LocationCardComponent, LocationCardData } from '../../../components/location-card/location-card.component';
 import { AuthStateService } from '@infrastructure/services/auth-state.service';
 import { FAVORITE_REPOSITORY } from '@infrastructure/di/tokens';
-import { FavoriteWithLocation, SupabaseFavoriteRepository } from '@infrastructure/repositories/supabase-favorite.repository';
-import { IFavoriteRepository } from '@core/repositories/favorite.repository';
+import { FavoriteWithLocation } from '@infrastructure/repositories/supabase-favorite.repository';
 
 type PageState = 'loading' | 'empty' | 'error' | 'loaded';
 
@@ -152,7 +151,7 @@ type PageState = 'loading' | 'empty' | 'error' | 'loaded';
 export class FavoritesPage implements OnInit {
   private readonly router = inject(Router);
   private readonly authState = inject(AuthStateService);
-  private readonly favoriteRepository = inject(FAVORITE_REPOSITORY) as IFavoriteRepository;
+  private readonly favoriteRepository = inject(FAVORITE_REPOSITORY);
 
   // State signals
   readonly favorites = signal<FavoriteWithLocation[]>([]);
