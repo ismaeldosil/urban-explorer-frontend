@@ -50,4 +50,18 @@
       <span>{{ filteredLocations().length }} lugares</span>
     </div>
   }
+
+  @if (selectedLocation()) {
+    <div class="preview-overlay" (click)="closePreview()"></div>
+    <div class="preview-sheet">
+      <div class="preview-handle"></div>
+      <app-location-preview-card
+        [location]="selectedLocation()!"
+        [distance]="getDistanceToLocation(selectedLocation()!)"
+        (cardClick)="onViewLocationDetails($event)"
+        (favoriteClick)="onPreviewFavorite($event)"
+        (viewDetails)="onViewLocationDetails($event)"
+      />
+    </div>
+  }
 </ion-content>

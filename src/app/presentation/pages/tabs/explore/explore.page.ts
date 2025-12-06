@@ -19,6 +19,7 @@ import { LocationEntity } from '@core/entities/location.entity';
 import { CapacitorGeolocationAdapter } from '@infrastructure/adapters/capacitor-geolocation.adapter';
 import { GetNearbyLocationsUseCase } from '@application/use-cases/locations/get-nearby-locations.usecase';
 import { Coordinates } from '@core/value-objects/coordinates.vo';
+import { LocationPreviewCardComponent } from '@presentation/components/location-preview-card';
 
 // Fix Leaflet default marker icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -37,7 +38,7 @@ export interface Category {
 @Component({
   selector: 'app-explore',
   standalone: true,
-  imports: [CommonModule, IonicModule],
+  imports: [CommonModule, IonicModule, LocationPreviewCardComponent],
   templateUrl: './explore.page.html',
   styleUrls: ['./explore.page.scss'],
 })
@@ -61,6 +62,7 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
   readonly isLoading = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
   readonly isMapReady = signal<boolean>(false);
+  readonly selectedLocation = signal<LocationEntity | null>(null);
 
   // Categories for filtering
   readonly categories: Category[] = [
@@ -329,18 +331,48 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
       { icon: customIcon }
     ).addTo(this.map);
 
-    marker.bindPopup(`
-      <div style="padding: 8px;">
-        <strong>${location.name}</strong><br>
-        <small>${location.address}</small><br>
-        <small>Rating: ${location.rating.toFixed(1)}</small>
-      </div>
-    `);
-
     marker.on('click', () => {
-      marker.openPopup();
+      this.selectLocation(location);
     });
 
     return marker;
+  }
+
+  selectLocation(location: LocationEntity): void {
+    this.selectedLocation.set(location);
+  }
+
+  closePreview(): void {
+    this.selectedLocation.set(null);
+  }
+
+  onPreviewFavorite(location: LocationEntity): void {
+    // TODO: Implement toggle favorite
+    console.log('Toggle favorite:', location.id);
+  }
+
+  onViewLocationDetails(location: LocationEntity): void {
+    this.router.navigate(['/location', location.id]);
+  }
+
+  getDistanceToLocation(location: LocationEntity): number | null {
+    const userPos = this.userPosition();
+    if (!userPos) return null;
+
+    const R = 6371; // Earth's radius in km
+    const dLat = this.toRad(location.coordinates.latitude - userPos.latitude);
+    const dLon = this.toRad(location.coordinates.longitude - userPos.longitude);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.toRad(userPos.latitude)) *
+        Math.cos(this.toRad(location.coordinates.latitude)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  private toRad(deg: number): number {
+    return deg * (Math.PI / 180);
   }
 }
