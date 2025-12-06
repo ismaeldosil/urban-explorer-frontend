@@ -11,6 +11,7 @@ export interface LocationProps {
   city: string;
   country: string;
   imageUrl?: string;
+  images?: string[];
   rating: number;
   reviewCount?: number;
   createdBy: string;
@@ -37,6 +38,7 @@ export class LocationEntity {
   get city(): string { return this.props.city; }
   get country(): string { return this.props.country; }
   get imageUrl(): string | undefined { return this.props.imageUrl; }
+  get images(): string[] { return this.props.images ?? []; }
   get rating(): number { return this.props.rating; }
   get reviewCount(): number { return this.props.reviewCount ?? 0; }
   get createdBy(): string { return this.props.createdBy; }

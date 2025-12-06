@@ -52,6 +52,7 @@ import { GetLocationDetailUseCase } from '@application/use-cases/locations/get-l
 import { AuthStateService } from '@infrastructure/services/auth-state.service';
 import { FAVORITE_REPOSITORY, REVIEW_REPOSITORY } from '@infrastructure/di/tokens';
 import { StarRatingComponent } from '@presentation/components/star-rating';
+import { ImageCarouselComponent } from '@presentation/components/image-carousel';
 
 interface ReviewDisplay {
   id: string;
@@ -91,6 +92,7 @@ interface ReviewDisplay {
     IonFab,
     IonFabButton,
     StarRatingComponent,
+    ImageCarouselComponent,
   ],
   template: `
     <ion-header>
@@ -139,16 +141,10 @@ interface ReviewDisplay {
 
       <!-- Location Content -->
       @if (location() && !isLoading()) {
-        <!-- Hero Image -->
-        <div class="hero-image">
-          @if (location()!.imageUrl) {
-            <img [src]="location()!.imageUrl" [alt]="location()!.name" />
-          } @else {
-            <div class="no-image">
-              <ion-icon name="image-outline"></ion-icon>
-            </div>
-          }
-          <div class="hero-overlay">
+        <!-- Image Gallery -->
+        <div class="gallery-container">
+          <app-image-carousel [images]="locationImages()"></app-image-carousel>
+          <div class="gallery-overlay">
             <ion-chip [color]="getCategoryColor(location()!.category)">
               <ion-label>{{ location()!.category }}</ion-label>
             </ion-chip>
@@ -282,36 +278,22 @@ interface ReviewDisplay {
       }
     }
 
-    .hero-image {
+    .gallery-container {
       position: relative;
       width: 100%;
-      height: 250px;
+      height: 280px;
       overflow: hidden;
 
-      img {
-        width: 100%;
+      app-image-carousel {
+        display: block;
         height: 100%;
-        object-fit: cover;
       }
 
-      .no-image {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--ion-color-light);
-
-        ion-icon {
-          font-size: 64px;
-          color: var(--ion-color-medium);
-        }
-      }
-
-      .hero-overlay {
+      .gallery-overlay {
         position: absolute;
         bottom: 12px;
         left: 12px;
+        z-index: 10;
       }
     }
 
@@ -472,6 +454,15 @@ export class LocationDetailPage implements OnInit {
   isAuthenticated = computed(() => this.authStateService.isAuthenticated());
   currentUser = computed(() => this.authStateService.currentUser());
   reviewsCount = computed(() => this.reviews().length);
+  locationImages = computed(() => {
+    const loc = this.location();
+    if (!loc) return [];
+    // Use images array if available, otherwise fallback to single imageUrl
+    if (loc.images && loc.images.length > 0) {
+      return loc.images;
+    }
+    return loc.imageUrl ? [loc.imageUrl] : [];
+  });
 
   constructor() {
     addIcons({
