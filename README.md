@@ -7,88 +7,88 @@
 [![Angular](https://img.shields.io/badge/Angular-18-DD0031?logo=angular&logoColor=white)](https://angular.io/)
 [![Capacitor](https://img.shields.io/badge/Capacitor-6.0-119EFF?logo=capacitor&logoColor=white)](https://capacitorjs.com/)
 
-> Transforma tus paseos por la ciudad en aventuras de descubrimiento
+> Turn your city walks into discovery adventures
 
 <p align="center">
   <img src="docs/screenshots/hero.png" alt="Urban Explorer" width="600">
 </p>
 
-## Acerca del Proyecto
+## About The Project
 
-**Urban Explorer** es una aplicación móvil de exploración urbana gamificada. Descubre lugares ocultos, desbloquea zonas visitándolas físicamente, colecciona logros y compite con otros exploradores.
+**Urban Explorer** is a gamified urban exploration mobile app. Discover hidden places, unlock zones by physically visiting them, collect achievements, and compete with other explorers.
 
-### Funcionalidades Principales
+### Key Features
 
-- **Mapa Interactivo** - Explora tu ciudad con un mapa en tiempo real que muestra lugares de interés cercanos
-- **Sistema de Reviews** - Comparte tu experiencia y lee opiniones de otros exploradores
-- **Favoritos** - Guarda los lugares que quieres visitar
-- **Perfil Personalizado** - Gestiona tu perfil, estadísticas y logros
-- **Geolocalización** - Descubre lugares cercanos automáticamente
-- **Modo Offline** - Accede a tus favoritos sin conexión (próximamente)
+- **Interactive Map** - Explore your city with a real-time map showing nearby points of interest
+- **Review System** - Share your experience and read reviews from other explorers
+- **Favorites** - Save places you want to visit
+- **Personalized Profile** - Manage your profile, stats, and achievements
+- **Geolocation** - Automatically discover nearby places
+- **Offline Mode** - Access your favorites without connection (coming soon)
 
-### Capturas de Pantalla
+### Screenshots
 
-| Explorar | Detalle | Perfil |
-|:--------:|:-------:|:------:|
+| Explore | Detail | Profile |
+|:-------:|:------:|:-------:|
 | ![Explore](docs/screenshots/explore.png) | ![Detail](docs/screenshots/detail.png) | ![Profile](docs/screenshots/profile.png) |
 
 ## Tech Stack
 
-| Tecnología | Versión | Propósito |
-|------------|---------|-----------|
-| [Ionic](https://ionicframework.com/) | 8.x | Framework UI móvil |
-| [Angular](https://angular.io/) | 18.x | Framework web |
-| [Capacitor](https://capacitorjs.com/) | 6.x | Runtime nativo (iOS/Android) |
-| [Leaflet](https://leafletjs.com/) | 1.9.x | Mapas interactivos |
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| [Ionic](https://ionicframework.com/) | 8.x | Mobile UI framework |
+| [Angular](https://angular.io/) | 18.x | Web framework |
+| [Capacitor](https://capacitorjs.com/) | 6.x | Native runtime (iOS/Android) |
+| [Leaflet](https://leafletjs.com/) | 1.9.x | Interactive maps |
 | [Supabase](https://supabase.com/) | - | Backend (Auth, DB, Storage) |
 
-### Arquitectura
+### Architecture
 
-El proyecto sigue **Clean Architecture** con 4 capas:
+The project follows **Clean Architecture** with 4 layers:
 
 ```
 src/app/
-├── core/           # Entidades y value objects
-├── application/    # Casos de uso
-├── infrastructure/ # Implementaciones (Supabase, Capacitor)
-└── presentation/   # Componentes UI y páginas
+├── core/           # Entities and value objects
+├── application/    # Use cases
+├── infrastructure/ # Implementations (Supabase, Capacitor)
+└── presentation/   # UI components and pages
 ```
 
-## Instalación
+## Installation
 
-### Prerrequisitos
+### Prerequisites
 
 - Node.js 18+
 - npm 9+
-- iOS: Xcode 15+ (para desarrollo iOS)
-- Android: Android Studio (para desarrollo Android)
+- iOS: Xcode 15+ (for iOS development)
+- Android: Android Studio (for Android development)
 
-### Configuración
+### Setup
 
-1. **Clonar el repositorio**
+1. **Clone the repository**
    ```bash
    git clone https://github.com/ismaeldosil/urban-explorer-frontend.git
    cd urban-explorer-frontend
    ```
 
-2. **Instalar dependencias**
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-3. **Configurar variables de entorno**
+3. **Configure environment variables**
    ```bash
    cp src/environments/environment.example.ts src/environments/environment.ts
-   # Editar con tus credenciales de Supabase
+   # Edit with your Supabase credentials
    ```
 
-4. **Ejecutar en desarrollo**
+4. **Run in development**
    ```bash
    npm start
-   # Abre http://localhost:8100
+   # Opens http://localhost:8100
    ```
 
-### Ejecución en dispositivos
+### Running on Devices
 
 ```bash
 # iOS Simulator
@@ -97,62 +97,62 @@ ionic cap run ios
 # Android Emulator
 ionic cap run android
 
-# Dispositivo físico (con cable)
+# Physical device (with cable)
 ionic cap run ios --device
 ionic cap run android --device
 ```
 
-## Scripts Disponibles
+## Available Scripts
 
-| Comando | Descripción |
+| Command | Description |
 |---------|-------------|
-| `npm start` | Servidor de desarrollo |
-| `npm run build` | Build de producción |
-| `npm run lint` | Ejecutar ESLint |
-| `npm test` | Tests unitarios |
-| `npm run test:ci` | Tests con cobertura |
+| `npm start` | Development server |
+| `npm run build` | Production build |
+| `npm run lint` | Run ESLint |
+| `npm test` | Unit tests |
+| `npm run test:ci` | Tests with coverage |
 
-## Estructura del Proyecto
+## Project Structure
 
 ```
 urban-explorer-frontend/
 ├── src/
 │   ├── app/
-│   │   ├── core/              # Entidades, repositorios
-│   │   ├── application/       # Casos de uso, ports
+│   │   ├── core/              # Entities, repositories
+│   │   ├── application/       # Use cases, ports
 │   │   ├── infrastructure/    # Adapters, services
 │   │   └── presentation/      # Pages, components, guards
-│   ├── assets/                # Imágenes, iconos
-│   ├── environments/          # Configuración por ambiente
-│   └── theme/                 # Variables SCSS globales
-├── ios/                       # Proyecto Xcode
-├── android/                   # Proyecto Android Studio
-└── capacitor.config.ts        # Configuración Capacitor
+│   ├── assets/                # Images, icons
+│   ├── environments/          # Environment config
+│   └── theme/                 # Global SCSS variables
+├── ios/                       # Xcode project
+├── android/                   # Android Studio project
+└── capacitor.config.ts        # Capacitor config
 ```
 
-## Contribuir
+## Contributing
 
-Las contribuciones son bienvenidas. Por favor:
+Contributions are welcome. Please:
 
-1. Fork el repositorio
-2. Crea una rama (`git checkout -b feature/nueva-funcionalidad`)
-3. Commit tus cambios (`git commit -m 'feat: agregar nueva funcionalidad'`)
-4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
-5. Abre un Pull Request
+1. Fork the repository
+2. Create a branch (`git checkout -b feature/new-feature`)
+3. Commit your changes (`git commit -m 'feat: add new feature'`)
+4. Push to the branch (`git push origin feature/new-feature`)
+5. Open a Pull Request
 
-## Repositorios Relacionados
+## Related Repositories
 
-| Repositorio | Descripción |
-|-------------|-------------|
-| [urban-explorer-backend](https://github.com/ismaeldosil/urban-explorer-backend) | Backend con Supabase |
-| [urban-explorer-docs](https://github.com/ismaeldosil/urban-explorer-docs) | Documentación |
+| Repository | Description |
+|------------|-------------|
+| [urban-explorer-backend](https://github.com/ismaeldosil/urban-explorer-backend) | Supabase backend |
+| [urban-explorer-docs](https://github.com/ismaeldosil/urban-explorer-docs) | Documentation |
 
-## Licencia
+## License
 
-Este proyecto está bajo la Licencia MIT. Ver [LICENSE](LICENSE) para más detalles.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
 <p align="center">
-  Hecho con <img src="https://img.shields.io/badge/Ionic-3880FF?logo=ionic&logoColor=white" alt="Ionic" height="20"> en Argentina
+  Made with <img src="https://img.shields.io/badge/Ionic-3880FF?logo=ionic&logoColor=white" alt="Ionic" height="20"> in Argentina
 </p>
