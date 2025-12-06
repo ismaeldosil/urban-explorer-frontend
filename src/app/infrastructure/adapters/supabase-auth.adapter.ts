@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { IAuthPort, AuthCredentials, RegisterData, AuthSession } from '@application/ports/auth.port';
+import { IAuthPort, AuthCredentials, RegisterData, AuthSession, OAuthProvider } from '@application/ports/auth.port';
 import { SupabaseService } from '../services/supabase.service';
 import { UserEntity } from '@core/entities/user.entity';
 import { Email } from '@core/value-objects/email.vo';
@@ -89,6 +89,17 @@ export class SupabaseAuthAdapter implements IAuthPort {
       refreshToken: authData.session.refresh_token,
       expiresAt: authData.session.expires_at || 0,
     };
+  }
+
+  async signInWithOAuth(provider: OAuthProvider): Promise<void> {
+    const { error } = provider === 'google'
+      ? await this.supabase.signInWithGoogle()
+      : await this.supabase.signInWithApple();
+
+    if (error) {
+      throw new DomainError(error.message, 'AUTH_ERROR');
+    }
+    // OAuth will redirect, session will be captured via onAuthStateChange
   }
 
   async signOut(): Promise<void> {

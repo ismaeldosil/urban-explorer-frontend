@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { IonicModule, ToastController } from '@ionic/angular';
-import { LoginUseCase } from '@application/use-cases/auth';
+import { LoginUseCase, OAuthLoginUseCase } from '@application/use-cases/auth';
 
 @Component({
   selector: 'app-login',
@@ -66,12 +66,14 @@ import { LoginUseCase } from '@application/use-cases/auth';
         </div>
 
         <div class="social-buttons">
-          <ion-button expand="block" fill="outline" (click)="loginWithGoogle()">
-            <ion-icon name="logo-google" slot="start"></ion-icon>
+          <ion-button expand="block" fill="outline" (click)="loginWithGoogle()" [disabled]="isOAuthLoading()">
+            <ion-spinner *ngIf="isOAuthLoading()" name="crescent" slot="start"></ion-spinner>
+            <ion-icon *ngIf="!isOAuthLoading()" name="logo-google" slot="start"></ion-icon>
             Continuar con Google
           </ion-button>
-          <ion-button expand="block" fill="outline" (click)="loginWithApple()" class="apple-btn">
-            <ion-icon name="logo-apple" slot="start"></ion-icon>
+          <ion-button expand="block" fill="outline" (click)="loginWithApple()" [disabled]="isOAuthLoading()" class="apple-btn">
+            <ion-spinner *ngIf="isOAuthLoading()" name="crescent" slot="start"></ion-spinner>
+            <ion-icon *ngIf="!isOAuthLoading()" name="logo-apple" slot="start"></ion-icon>
             Continuar con Apple
           </ion-button>
         </div>
@@ -179,11 +181,13 @@ export class LoginPage {
   private router = inject(Router);
   private toastController = inject(ToastController);
   private loginUseCase = inject(LoginUseCase);
+  private oauthLoginUseCase = inject(OAuthLoginUseCase);
 
   email = '';
   password = '';
   showPassword = signal(false);
   isLoading = signal(false);
+  isOAuthLoading = signal(false);
 
   isFormValid(): boolean {
     return this.email.length > 0 && this.password.length > 0;
@@ -219,10 +223,39 @@ export class LoginPage {
   }
 
   async loginWithGoogle(): Promise<void> {
-    // TODO: Implement Google OAuth
+    this.isOAuthLoading.set(true);
+
+    const result = await this.oauthLoginUseCase.execute({ provider: 'google' });
+
+    if (!result.success) {
+      this.isOAuthLoading.set(false);
+      const toast = await this.toastController.create({
+        message: result.error.message,
+        duration: 3000,
+        color: 'danger',
+        position: 'top',
+      });
+      await toast.present();
+    }
+    // If successful, OAuth will redirect to external provider
+    // Session will be captured on return via deep link
   }
 
   async loginWithApple(): Promise<void> {
-    // TODO: Implement Apple OAuth
+    this.isOAuthLoading.set(true);
+
+    const result = await this.oauthLoginUseCase.execute({ provider: 'apple' });
+
+    if (!result.success) {
+      this.isOAuthLoading.set(false);
+      const toast = await this.toastController.create({
+        message: result.error.message,
+        duration: 3000,
+        color: 'danger',
+        position: 'top',
+      });
+      await toast.present();
+    }
+    // If successful, OAuth will redirect to external provider
   }
 }

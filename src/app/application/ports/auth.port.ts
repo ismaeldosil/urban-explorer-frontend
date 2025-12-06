@@ -16,9 +16,12 @@ export interface AuthSession {
   expiresAt: number;
 }
 
+export type OAuthProvider = 'google' | 'apple';
+
 export interface IAuthPort {
   signIn(credentials: AuthCredentials): Promise<AuthSession>;
   signUp(data: RegisterData): Promise<AuthSession>;
+  signInWithOAuth(provider: OAuthProvider): Promise<void>;
   signOut(): Promise<void>;
   resetPassword(email: string): Promise<void>;
   getSession(): Promise<AuthSession | null>;
