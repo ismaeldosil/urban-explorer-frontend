@@ -43,3 +43,10 @@ ios/
 
 # MCP config (contains local paths)
 .mcp.json
+
+# Claude Code configuration (local only)
+urban-explorer-docs/
+CLAUDE.md
+.claude
+**/CLAUDE.md
+**/.claude
