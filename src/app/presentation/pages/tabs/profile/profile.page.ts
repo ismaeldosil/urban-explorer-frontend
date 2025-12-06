@@ -229,7 +229,7 @@ export class ProfilePage implements OnInit {
   private async performLogout(): Promise<void> {
     const result = await this.logoutUseCase.execute();
 
-    if (result.success) {
+    if (result.isSuccess) {
       this.router.navigate(['/auth/login'], { replaceUrl: true });
     } else {
       const alert = await this.alertController.create({

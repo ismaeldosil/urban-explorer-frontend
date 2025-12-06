@@ -1,11 +1,7 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './presentation/guards/auth.guard';
 
 export const routes: Routes = [
-  {
-    path: '',
-    redirectTo: 'tabs',
-    pathMatch: 'full',
-  },
   {
     path: 'tabs',
     loadChildren: () =>
@@ -15,5 +11,42 @@ export const routes: Routes = [
     path: 'auth',
     loadChildren: () =>
       import('./presentation/pages/auth/auth.routes').then((m) => m.AUTH_ROUTES),
+  },
+  {
+    path: 'profile',
+    canActivate: [authGuard],
+    children: [
+      {
+        path: 'edit',
+        loadComponent: () =>
+          import('./presentation/pages/profile/edit-profile/edit-profile.page').then(
+            (m) => m.EditProfilePage
+          ),
+      },
+      {
+        path: 'my-reviews',
+        loadComponent: () =>
+          import('./presentation/pages/profile/my-reviews/my-reviews.page').then(
+            (m) => m.MyReviewsPage
+          ),
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./presentation/pages/profile/settings/settings.page').then(
+            (m) => m.SettingsPage
+          ),
+      },
+      {
+        path: '',
+        redirectTo: '/tabs/profile',
+        pathMatch: 'full',
+      },
+    ],
+  },
+  {
+    path: '',
+    redirectTo: 'tabs',
+    pathMatch: 'full',
   },
 ];
