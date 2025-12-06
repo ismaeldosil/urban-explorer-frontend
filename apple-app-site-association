@@ -1,0 +1,20 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAM_ID.app.urbanexplorer",
+        "paths": [
+          "/location/*",
+          "/profile/*",
+          "/review/*"
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "TEAM_ID.app.urbanexplorer"
+    ]
+  }
+}

@@ -13,6 +13,10 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 2000,
       backgroundColor: '#3880ff'
+    },
+    App: {
+      // Enable deep linking
+      appUrlOpen: true
     }
   }
 };

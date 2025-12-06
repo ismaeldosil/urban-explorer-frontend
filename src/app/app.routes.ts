@@ -53,11 +53,25 @@ export const routes: Routes = [
           ),
       },
       {
+        path: ':username',
+        loadComponent: () =>
+          import('./presentation/pages/tabs/profile/profile.page').then(
+            (m) => m.ProfilePage
+          ),
+      },
+      {
         path: '',
         redirectTo: '/tabs/profile',
         pathMatch: 'full',
       },
     ],
+  },
+  {
+    path: 'review/:id',
+    loadComponent: () =>
+      import('./presentation/pages/location-detail/location-detail.page').then(
+        (m) => m.LocationDetailPage
+      ),
   },
   {
     path: '',
