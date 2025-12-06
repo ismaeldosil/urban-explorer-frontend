@@ -1,0 +1,290 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      deploy_firebase:
+        description: 'Deploy to Firebase'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  NODE_VERSION: '20'
+  JAVA_VERSION: '17'
+
+jobs:
+  build-web:
+    name: Build Web
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production
+        run: npm run build -- --configuration=production
+
+      - name: Upload web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: www/
+          retention-days: 30
+
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    needs: build-web
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets
+        run: npm run build -- --configuration=production
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build Debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug
+
+      - name: Build Release APK (unsigned)
+        run: |
+          cd android
+          ./gradlew assembleRelease
+
+      - name: Rename APKs with version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          mkdir -p release-apks
+          cp android/app/build/outputs/apk/debug/app-debug.apk release-apks/urban-explorer-${VERSION}-debug.apk
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk release-apks/urban-explorer-${VERSION}-release.apk
+
+      - name: Upload Android APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apks
+          path: release-apks/
+          retention-days: 30
+
+  # iOS build - requires macOS runner and Apple Developer account
+  # Uncomment when you have Apple Developer account configured
+  # build-ios:
+  #   name: Build iOS
+  #   runs-on: macos-latest
+  #   needs: build-web
+  #
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: ${{ env.NODE_VERSION }}
+  #         cache: 'npm'
+  #
+  #     - name: Install dependencies
+  #       run: npm ci
+  #
+  #     - name: Build web assets
+  #       run: npm run build -- --configuration=production
+  #
+  #     - name: Sync Capacitor iOS
+  #       run: npx cap sync ios
+  #
+  #     - name: Build iOS (requires signing)
+  #       run: |
+  #         cd ios/App
+  #         xcodebuild -workspace App.xcworkspace \
+  #           -scheme App \
+  #           -configuration Release \
+  #           -archivePath build/App.xcarchive \
+  #           archive
+  #
+  #     - name: Upload iOS build
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: ios-build
+  #         path: ios/App/build/
+  #         retention-days: 30
+
+  # Deploy to Firebase Hosting (Web/PWA)
+  deploy-firebase-hosting:
+    name: Deploy to Firebase Hosting
+    runs-on: ubuntu-latest
+    needs: build-web
+    if: ${{ github.event.inputs.deploy_firebase != 'false' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download web build
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: www/
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
+          entryPoint: .
+
+  # Distribute APK via Firebase App Distribution
+  deploy-firebase-distribution:
+    name: Deploy to Firebase App Distribution
+    runs-on: ubuntu-latest
+    needs: build-android
+    if: ${{ github.event.inputs.deploy_firebase != 'false' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Android APKs
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apks
+          path: android-apks/
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          groups: testers
+          file: android-apks/urban-explorer-${{ steps.version.outputs.VERSION }}-debug.apk
+          releaseNotes: |
+            Urban Explorer ${{ steps.version.outputs.VERSION }}
+
+            Automated release from GitHub Actions.
+            See full changelog: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.VERSION }}
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-web, build-android]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download web build
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: web-build/
+
+      - name: Download Android APKs
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apks
+          path: android-apks/
+
+      - name: Create web build zip
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          cd web-build
+          zip -r ../urban-explorer-${VERSION}-web.zip .
+
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          cat << EOF > release_notes.md
+          ## Urban Explorer ${VERSION}
+
+          ### Downloads
+
+          | Platform | File | Description |
+          |----------|------|-------------|
+          | Android | \`urban-explorer-${VERSION}-debug.apk\` | Debug build - for testing |
+          | Android | \`urban-explorer-${VERSION}-release.apk\` | Release build (unsigned) |
+          | Web | \`urban-explorer-${VERSION}-web.zip\` | Web build for deployment |
+          | Firebase | [App Distribution](https://appdistribution.firebase.dev) | Install via Firebase |
+          | Web Live | [Firebase Hosting](https://urbanexplorer.web.app) | Live web version |
+
+          ### Installation
+
+          #### Android (Firebase App Distribution - Recommended)
+          1. Join the testers group (request access from project owner)
+          2. Install Firebase App Tester app
+          3. Receive automatic update notifications
+
+          #### Android (Manual APK)
+          1. Download the APK file
+          2. Enable "Install from unknown sources" in your device settings
+          3. Open the APK file to install
+
+          #### Web
+          1. Visit [urbanexplorer.web.app](https://urbanexplorer.web.app)
+          2. Or extract the zip file and deploy to your web server
+
+          ---
+
+          ### What's New
+
+          See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+          EOF
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: release_notes.md
+          files: |
+            android-apks/*.apk
+            urban-explorer-*-web.zip
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
