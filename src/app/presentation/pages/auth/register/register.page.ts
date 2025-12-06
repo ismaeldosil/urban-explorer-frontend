@@ -1,15 +1,15 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { IonicModule, ToastController } from '@ionic/angular';
 import { RegisterUseCase } from '@application/use-cases/auth';
-import { Password } from '@core/value-objects/password.vo';
+import { PasswordStrengthIndicatorComponent } from '@presentation/components/password-strength-indicator';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule, RouterLink],
+  imports: [CommonModule, FormsModule, IonicModule, RouterLink, PasswordStrengthIndicatorComponent],
   template: `
     <ion-header>
       <ion-toolbar>
@@ -68,19 +68,13 @@ import { Password } from '@core/value-objects/password.vo';
         </ion-item>
 
         <!-- Password Strength -->
-        <div class="password-strength" *ngIf="password">
-          <div class="strength-bars">
-            <div
-              *ngFor="let i of [0,1,2,3]"
-              class="bar"
-              [class.active]="i < passwordStrength().score"
-              [style.background-color]="i < passwordStrength().score ? getStrengthColor() : '#E0E0E0'"
-            ></div>
-          </div>
-          <span class="strength-label" [style.color]="getStrengthColor()">
-            {{ passwordStrength().label }}
-          </span>
-        </div>
+        @if (password) {
+          <app-password-strength-indicator
+            [password]="password"
+            [showRequirements]="true"
+            [minLength]="8"
+          />
+        }
 
         <!-- Confirm Password -->
         <ion-item lines="none" class="input-item">
@@ -140,26 +134,8 @@ import { Password } from '@core/value-objects/password.vo';
       color: var(--ion-color-medium);
       margin: 0 0 16px 4px;
     }
-    .password-strength {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    app-password-strength-indicator {
       margin: 8px 0 16px 4px;
-    }
-    .strength-bars {
-      display: flex;
-      gap: 4px;
-    }
-    .bar {
-      width: 40px;
-      height: 4px;
-      border-radius: 2px;
-      background: #E0E0E0;
-      transition: background-color 0.2s;
-    }
-    .strength-label {
-      font-size: 12px;
-      font-weight: 500;
     }
     .error-text {
       color: var(--ion-color-danger);
@@ -210,8 +186,6 @@ export class RegisterPage {
   showPassword = signal(false);
   isLoading = signal(false);
 
-  passwordStrength = computed(() => Password.getStrength(this.password));
-
   isFormValid(): boolean {
     return (
       this.username.length >= 3 &&
@@ -224,15 +198,6 @@ export class RegisterPage {
 
   togglePassword(): void {
     this.showPassword.update(v => !v);
-  }
-
-  getStrengthColor(): string {
-    const colors: Record<string, string> = {
-      'danger': '#DC3545',
-      'warning': '#FFC107',
-      'success': '#28A745',
-    };
-    return colors[this.passwordStrength().color] || '#E0E0E0';
   }
 
   async onSubmit(): Promise<void> {

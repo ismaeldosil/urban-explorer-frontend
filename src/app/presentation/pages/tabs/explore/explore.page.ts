@@ -20,14 +20,10 @@ import { CapacitorGeolocationAdapter } from '@infrastructure/adapters/capacitor-
 import { GetNearbyLocationsUseCase } from '@application/use-cases/locations/get-nearby-locations.usecase';
 import { Coordinates } from '@core/value-objects/coordinates.vo';
 import { LocationPreviewCardComponent } from '@presentation/components/location-preview-card';
-
-// Fix Leaflet default marker icon issue
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'assets/markers/marker-icon-2x.png',
-  iconUrl: 'assets/markers/marker-icon.png',
-  shadowUrl: 'assets/markers/marker-shadow.png',
-});
+import {
+  LocationMarkerComponent,
+  MarkerCategory,
+} from '@presentation/components/location-marker';
 
 export interface Category {
   id: string;
@@ -87,16 +83,6 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
     return allLocations.filter(location => location.category === category);
   });
 
-  // Category icon mapping for markers
-  private readonly categoryIcons: Record<string, string> = {
-    restaurant: '#FF6B6B',
-    cafe: '#8B4513',
-    park: '#4CAF50',
-    museum: '#9C27B0',
-    bar: '#FF9800',
-    shop: '#2196F3',
-    default: '#607D8B',
-  };
 
   constructor() {
     // Effect to update markers when filtered locations change
@@ -304,31 +290,18 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
   private createLocationMarker(location: LocationEntity): L.Marker | null {
     if (!this.map) return null;
 
-    const color = this.categoryIcons[location.category] || this.categoryIcons['default'];
+    const category = LocationMarkerComponent.getCategoryFromType(location.category);
+    const isSelected = this.selectedLocation()?.id === location.id;
 
-    const customIcon = L.divIcon({
-      className: 'location-marker',
-      html: `
-        <div style="
-          width: 30px;
-          height: 30px;
-          background: ${color};
-          border-radius: 50% 50% 50% 0;
-          transform: rotate(-45deg);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        "></div>
-      `,
-      iconSize: [30, 42],
-      iconAnchor: [15, 42],
-      popupAnchor: [0, -42],
+    const icon = LocationMarkerComponent.createLeafletIcon(category, {
+      selected: isSelected,
+      rating: location.rating,
+      showRating: location.rating > 0,
     });
 
     const marker = L.marker(
       [location.coordinates.latitude, location.coordinates.longitude],
-      { icon: customIcon }
+      { icon }
     ).addTo(this.map);
 
     marker.on('click', () => {
