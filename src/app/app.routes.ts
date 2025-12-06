@@ -13,6 +13,13 @@ export const routes: Routes = [
       import('./presentation/pages/auth/auth.routes').then((m) => m.AUTH_ROUTES),
   },
   {
+    path: 'locations',
+    loadComponent: () =>
+      import('./presentation/pages/location-list/location-list.page').then(
+        (m) => m.LocationListPage
+      ),
+  },
+  {
     path: 'location/:id',
     loadComponent: () =>
       import('./presentation/pages/location-detail/location-detail.page').then(
