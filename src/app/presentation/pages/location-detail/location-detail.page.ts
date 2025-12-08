@@ -7,7 +7,6 @@ import {
   computed,
   ViewChild,
   ElementRef,
-  AfterViewInit,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -92,7 +91,7 @@ interface DayHours {
   styleUrls: ['./location-detail.page.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LocationDetailPage implements OnInit, OnDestroy, AfterViewInit {
+export class LocationDetailPage implements OnInit, OnDestroy {
   @ViewChild('miniMapContainer') miniMapContainer!: ElementRef<HTMLDivElement>;
 
   private readonly route = inject(ActivatedRoute);
