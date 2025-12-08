@@ -120,6 +120,12 @@ import { LoginUseCase, OAuthLoginUseCase } from '@application/use-cases/auth';
       margin-bottom: 16px;
       --padding-start: 16px;
       --inner-padding-end: 8px;
+      --color: #1f1f1f;
+    }
+    .input-item ion-input {
+      --color: #1f1f1f;
+      --placeholder-color: #666;
+      --placeholder-opacity: 1;
     }
     .input-item ion-icon[slot="start"] {
       color: var(--ion-color-medium);

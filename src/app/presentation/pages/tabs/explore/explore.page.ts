@@ -13,17 +13,13 @@ import {
 import { CommonModule } from '@angular/common';
 import { IonicModule, Platform } from '@ionic/angular';
 import { Router } from '@angular/router';
-import * as L from 'leaflet';
 
 import { LocationEntity } from '@core/entities/location.entity';
 import { CapacitorGeolocationAdapter } from '@infrastructure/adapters/capacitor-geolocation.adapter';
 import { GetNearbyLocationsUseCase } from '@application/use-cases/locations/get-nearby-locations.usecase';
 import { Coordinates } from '@core/value-objects/coordinates.vo';
 import { LocationPreviewCardComponent } from '@presentation/components/location-preview-card';
-import {
-  LocationMarkerComponent,
-  MarkerCategory,
-} from '@presentation/components/location-marker';
+import { MapService } from '@infrastructure/services/map.service';
 
 export interface Category {
   id: string;
@@ -45,26 +41,30 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
   private readonly platform = inject(Platform);
   private readonly geolocationAdapter = inject(CapacitorGeolocationAdapter);
   private readonly getNearbyLocationsUseCase = inject(GetNearbyLocationsUseCase);
+  private readonly mapService = inject(MapService);
 
-  private map: L.Map | null = null;
-  private userMarker: L.Marker | null = null;
-  private locationMarkers: L.Marker[] = [];
   private mapInitialized = false;
+  private previewTouchStartY = 0;
+  private previewTranslateY = 0;
 
   // State signals
   readonly selectedCategory = signal<string>('all');
   readonly userPosition = signal<Coordinates | null>(null);
   readonly locations = signal<LocationEntity[]>([]);
   readonly isLoading = signal<boolean>(false);
+  readonly isLocating = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
   readonly isMapReady = signal<boolean>(false);
   readonly selectedLocation = signal<LocationEntity | null>(null);
+  readonly locationPermissionDenied = signal<boolean>(false);
+  readonly unreadNotifications = signal<number>(0);
+  readonly favoriteLocationIds = signal<Set<string>>(new Set());
 
   // Categories for filtering
   readonly categories: Category[] = [
     { id: 'all', name: 'Todos', icon: 'apps-outline' },
     { id: 'restaurant', name: 'Restaurantes', icon: 'restaurant-outline' },
-    { id: 'cafe', name: 'Cafes', icon: 'cafe-outline' },
+    { id: 'cafe', name: 'Cafés', icon: 'cafe-outline' },
     { id: 'park', name: 'Parques', icon: 'leaf-outline' },
     { id: 'museum', name: 'Museos', icon: 'library-outline' },
     { id: 'bar', name: 'Bares', icon: 'beer-outline' },
@@ -82,7 +82,6 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
 
     return allLocations.filter(location => location.category === category);
   });
-
 
   constructor() {
     // Effect to update markers when filtered locations change
@@ -106,10 +105,7 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.map) {
-      this.map.remove();
-      this.map = null;
-    }
+    this.mapService.destroy();
   }
 
   private initMap(): void {
@@ -126,27 +122,21 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
     }
 
     try {
-      // Create map centered on Montevideo
-      this.map = L.map(container, {
+      // Initialize map with MapService (includes clustering)
+      this.mapService.initializeMap(container, {
         center: [-34.9011, -56.1645],
         zoom: 14,
-        zoomControl: true,
+        zoomControl: false,
         attributionControl: true,
       });
 
-      // Add tile layer
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19,
-      }).addTo(this.map);
+      // Register marker click callback
+      this.mapService.onMarkerClick((location) => {
+        this.selectLocation(location);
+      });
 
       this.mapInitialized = true;
       this.isMapReady.set(true);
-
-      // Force resize
-      setTimeout(() => {
-        this.map?.invalidateSize();
-      }, 100);
 
       // Get user location
       this.initializeGeolocation();
@@ -160,37 +150,143 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
     this.router.navigate(['/tabs/search']);
   }
 
-  onCategoryChange(event: CustomEvent): void {
-    this.selectedCategory.set(event.detail.value);
+  openNotifications(): void {
+    this.router.navigate(['/notifications']);
+  }
+
+  selectCategory(categoryId: string): void {
+    this.selectedCategory.set(categoryId);
+  }
+
+  dismissError(): void {
+    this.errorMessage.set(null);
+  }
+
+  openLocationSettings(): void {
+    // TODO: Open device location settings
+    // For now, try to get location again
+    this.centerOnUser();
+  }
+
+  zoomIn(): void {
+    this.mapService.zoomIn();
+  }
+
+  zoomOut(): void {
+    this.mapService.zoomOut();
+  }
+
+  isLocationFavorite(location: LocationEntity): boolean {
+    return this.favoriteLocationIds().has(location.id);
+  }
+
+  // Preview sheet swipe-to-dismiss handlers
+  onPreviewTouchStart(event: TouchEvent): void {
+    this.previewTouchStartY = event.touches[0].clientY;
+    this.previewTranslateY = 0;
+  }
+
+  onPreviewTouchMove(event: TouchEvent): void {
+    const currentY = event.touches[0].clientY;
+    const deltaY = currentY - this.previewTouchStartY;
+
+    // Only allow swiping down
+    if (deltaY > 0) {
+      this.previewTranslateY = deltaY;
+      const previewSheet = document.querySelector('.preview-sheet') as HTMLElement;
+      if (previewSheet) {
+        previewSheet.style.transform = `translateY(${deltaY}px)`;
+      }
+    }
+  }
+
+  onPreviewTouchEnd(): void {
+    const previewSheet = document.querySelector('.preview-sheet') as HTMLElement;
+
+    // If swiped more than 100px, close the preview
+    if (this.previewTranslateY > 100) {
+      this.closePreview();
+    } else if (previewSheet) {
+      // Reset position
+      previewSheet.style.transform = 'translateY(0)';
+    }
+
+    this.previewTranslateY = 0;
   }
 
   async centerOnUser(): Promise<void> {
-    this.isLoading.set(true);
+    this.isLocating.set(true);
     this.errorMessage.set(null);
+    this.locationPermissionDenied.set(false);
 
     try {
+      // First try with Capacitor adapter
       const position = await this.geolocationAdapter.getCurrentPosition();
-      this.userPosition.set(position);
+      console.log('centerOnUser - Got position:', position.latitude, position.longitude);
 
-      if (this.map) {
-        this.map.setView([position.latitude, position.longitude], 15, {
-          animate: true,
-          duration: 0.5
-        });
-        this.updateUserMarker(position);
-      }
+      this.userPosition.set(position);
+      // Use combined method for reliable centering
+      this.mapService.setCenterAndZoom(position, 15, true);
+      this.mapService.setUserLocation(position);
 
       await this.loadNearbyLocations(position.latitude, position.longitude);
     } catch (error) {
-      console.error('Error getting location:', error);
-      this.errorMessage.set('No se pudo obtener tu ubicación.');
+      console.error('Error getting location with Capacitor:', error);
+
+      // Fallback to browser API
+      if ('geolocation' in navigator) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 15000,
+              maximumAge: 0,
+            });
+          });
+
+          const coords = Coordinates.create(
+            position.coords.latitude,
+            position.coords.longitude
+          );
+          console.log('centerOnUser - Got position from browser:', coords.latitude, coords.longitude);
+
+          this.userPosition.set(coords);
+          // Use combined method for reliable centering
+          this.mapService.setCenterAndZoom(coords, 15, true);
+          this.mapService.setUserLocation(coords);
+
+          await this.loadNearbyLocations(coords.latitude, coords.longitude);
+        } catch (browserError) {
+          console.error('Browser geolocation also failed:', browserError);
+          this.errorMessage.set('No se pudo obtener tu ubicación. Verifica los permisos del navegador.');
+          this.locationPermissionDenied.set(true);
+        }
+      } else {
+        this.errorMessage.set('Tu navegador no soporta geolocalización.');
+        this.locationPermissionDenied.set(true);
+      }
     } finally {
-      this.isLoading.set(false);
+      this.isLocating.set(false);
     }
   }
 
   private async initializeGeolocation(): Promise<void> {
+    this.isLocating.set(true);
+
     try {
+      // Use the Capacitor adapter which handles both web and native
+      const coords = await this.geolocationAdapter.getCurrentPosition();
+      console.log('initializeGeolocation - Got user position:', coords.latitude, coords.longitude);
+
+      this.userPosition.set(coords);
+      // Use combined method to set center AND zoom in one operation
+      this.mapService.setCenterAndZoom(coords, 15, false); // No animation for initial load
+      this.mapService.setUserLocation(coords);
+      await this.loadNearbyLocations(coords.latitude, coords.longitude);
+      this.isLocating.set(false);
+    } catch (error) {
+      console.warn('Geolocation error, using fallback:', error);
+      // Fallback: try browser's native geolocation API directly
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -198,56 +294,29 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
               position.coords.latitude,
               position.coords.longitude
             );
+            console.log('initializeGeolocation - Got position from browser API:', coords.latitude, coords.longitude);
             this.userPosition.set(coords);
-            if (this.map) {
-              this.map.setView([coords.latitude, coords.longitude], 15);
-              this.updateUserMarker(coords);
-            }
+            // Use combined method
+            this.mapService.setCenterAndZoom(coords, 15, false);
+            this.mapService.setUserLocation(coords);
             this.loadNearbyLocations(coords.latitude, coords.longitude);
+            this.isLocating.set(false);
           },
-          (error) => {
-            console.warn('Geolocation error:', error.message);
+          (geoError) => {
+            console.warn('Browser geolocation also failed:', geoError.message);
+            this.locationPermissionDenied.set(true);
+            // Load default location (Montevideo)
             this.loadNearbyLocations(-34.9011, -56.1645);
+            this.isLocating.set(false);
           },
-          { enableHighAccuracy: true, timeout: 10000 }
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
       } else {
+        this.locationPermissionDenied.set(true);
         this.loadNearbyLocations(-34.9011, -56.1645);
+        this.isLocating.set(false);
       }
-    } catch (error) {
-      console.error('Error initializing geolocation:', error);
     }
-  }
-
-  private updateUserMarker(position: Coordinates): void {
-    if (!this.map) return;
-
-    if (this.userMarker) {
-      this.userMarker.remove();
-    }
-
-    const userIcon = L.divIcon({
-      className: 'user-location-marker',
-      html: `
-        <div style="
-          width: 20px;
-          height: 20px;
-          background: #4285f4;
-          border: 3px solid white;
-          border-radius: 50%;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        "></div>
-      `,
-      iconSize: [20, 20],
-      iconAnchor: [10, 10],
-    });
-
-    this.userMarker = L.marker([position.latitude, position.longitude], {
-      icon: userIcon,
-      zIndexOffset: 1000,
-    }).addTo(this.map);
-
-    this.userMarker.bindPopup('Tu ubicación');
   }
 
   private async loadNearbyLocations(latitude: number, longitude: number): Promise<void> {
@@ -262,7 +331,8 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
       });
 
       this.locations.set(nearbyLocations);
-      this.updateLocationMarkers(nearbyLocations);
+      // Use MapService for clustering
+      this.mapService.setLocations(nearbyLocations, this.selectedLocation()?.id);
     } catch (error) {
       console.error('Error loading nearby locations:', error);
       this.errorMessage.set('Error al cargar ubicaciones cercanas.');
@@ -272,43 +342,8 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private updateLocationMarkers(locations: LocationEntity[]): void {
-    if (!this.map) return;
-
-    // Clear existing markers
-    this.locationMarkers.forEach(marker => marker.remove());
-    this.locationMarkers = [];
-
-    // Add markers for each location
-    locations.forEach(location => {
-      const marker = this.createLocationMarker(location);
-      if (marker) {
-        this.locationMarkers.push(marker);
-      }
-    });
-  }
-
-  private createLocationMarker(location: LocationEntity): L.Marker | null {
-    if (!this.map) return null;
-
-    const category = LocationMarkerComponent.getCategoryFromType(location.category);
-    const isSelected = this.selectedLocation()?.id === location.id;
-
-    const icon = LocationMarkerComponent.createLeafletIcon(category, {
-      selected: isSelected,
-      rating: location.rating,
-      showRating: location.rating > 0,
-    });
-
-    const marker = L.marker(
-      [location.coordinates.latitude, location.coordinates.longitude],
-      { icon }
-    ).addTo(this.map);
-
-    marker.on('click', () => {
-      this.selectLocation(location);
-    });
-
-    return marker;
+    // Use MapService for clustering with selected marker
+    this.mapService.setLocations(locations, this.selectedLocation()?.id);
   }
 
   selectLocation(location: LocationEntity): void {

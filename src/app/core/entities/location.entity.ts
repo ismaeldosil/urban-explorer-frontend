@@ -14,6 +14,11 @@ export interface LocationProps {
   images?: string[];
   rating: number;
   reviewCount?: number;
+  priceLevel?: number;
+  phone?: string;
+  website?: string;
+  amenities?: string[];
+  tags?: string[];
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
@@ -41,6 +46,11 @@ export class LocationEntity {
   get images(): string[] { return this.props.images ?? []; }
   get rating(): number { return this.props.rating; }
   get reviewCount(): number { return this.props.reviewCount ?? 0; }
+  get priceLevel(): number | undefined { return this.props.priceLevel; }
+  get phone(): string | undefined { return this.props.phone; }
+  get website(): string | undefined { return this.props.website; }
+  get amenities(): string[] { return this.props.amenities ?? []; }
+  get tags(): string[] { return this.props.tags ?? []; }
   get createdBy(): string { return this.props.createdBy; }
   get createdAt(): Date { return this.props.createdAt; }
   get updatedAt(): Date { return this.props.updatedAt; }

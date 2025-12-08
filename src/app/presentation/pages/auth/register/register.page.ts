@@ -124,6 +124,12 @@ import { PasswordStrengthIndicatorComponent } from '@presentation/components/pas
       --border-radius: 12px;
       margin-bottom: 8px;
       --padding-start: 16px;
+      --color: #1f1f1f;
+    }
+    .input-item ion-input {
+      --color: #1f1f1f;
+      --placeholder-color: #666;
+      --placeholder-opacity: 1;
     }
     .input-item ion-icon[slot="start"] {
       color: var(--ion-color-medium);

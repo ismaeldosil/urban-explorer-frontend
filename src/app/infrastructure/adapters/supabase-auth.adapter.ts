@@ -59,11 +59,12 @@ export class SupabaseAuthAdapter implements IAuthPort {
       throw new DomainError(authError.message, 'AUTH_ERROR');
     }
 
-    if (!authData.session || !authData.user) {
+    // Supabase may not return a session if email confirmation is required
+    if (!authData.user) {
       throw new DomainError('Registration failed', 'AUTH_ERROR');
     }
 
-    // Create profile
+    // Create profile (user exists even without confirmed email)
     const { error: profileError } = await this.supabase
       .from('profiles')
       .insert({
@@ -74,20 +75,22 @@ export class SupabaseAuthAdapter implements IAuthPort {
 
     if (profileError) {
       console.error('Error creating profile:', profileError);
+      // Don't throw - profile might be created by trigger or already exist
     }
 
     const user = UserEntity.create({
       id: authData.user.id,
       email: Email.create(data.email),
       username: data.username,
-      emailVerified: false,
+      emailVerified: authData.user.email_confirmed_at !== null,
     });
 
+    // If no session (email confirmation required), return partial session
     return {
       user,
-      accessToken: authData.session.access_token,
-      refreshToken: authData.session.refresh_token,
-      expiresAt: authData.session.expires_at || 0,
+      accessToken: authData.session?.access_token || '',
+      refreshToken: authData.session?.refresh_token || '',
+      expiresAt: authData.session?.expires_at || 0,
     };
   }
 

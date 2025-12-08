@@ -6,7 +6,8 @@ import {
   REVIEW_REPOSITORY,
   STORAGE_PORT,
   GEOLOCATION_PORT,
-  FAVORITE_REPOSITORY
+  FAVORITE_REPOSITORY,
+  FILE_STORAGE_PORT,
 } from './tokens';
 import { SupabaseAuthAdapter } from '../adapters/supabase-auth.adapter';
 import { SupabaseUserRepository } from '../repositories/supabase-user.repository';
@@ -15,6 +16,7 @@ import { SupabaseFavoriteRepository } from '../repositories/supabase-favorite.re
 import { SupabaseReviewRepository } from '../repositories/supabase-review.repository';
 import { CapacitorStorageAdapter } from '../adapters/capacitor-storage.adapter';
 import { CapacitorGeolocationAdapter } from '../adapters/capacitor-geolocation.adapter';
+import { SupabaseFileStorageService } from '../services/supabase-file-storage.service';
 
 export const INFRASTRUCTURE_PROVIDERS: Provider[] = [
   { provide: AUTH_PORT, useClass: SupabaseAuthAdapter },
@@ -24,4 +26,5 @@ export const INFRASTRUCTURE_PROVIDERS: Provider[] = [
   { provide: FAVORITE_REPOSITORY, useClass: SupabaseFavoriteRepository },
   { provide: STORAGE_PORT, useClass: CapacitorStorageAdapter },
   { provide: GEOLOCATION_PORT, useClass: CapacitorGeolocationAdapter },
+  { provide: FILE_STORAGE_PORT, useClass: SupabaseFileStorageService },
 ];

@@ -1,6 +1,12 @@
 import { Injectable } from '@angular/core';
 import { SupabaseService } from '../services/supabase.service';
-import { IReviewRepository } from '@core/repositories/review.repository';
+import {
+  IReviewRepository,
+  GetReviewsOptions,
+  PaginatedResult,
+  CreateReviewInput,
+  UpdateReviewInput,
+} from '@core/repositories/review.repository';
 import { ReviewEntity } from '@core/entities/review.entity';
 import { Result } from '@shared/types/result.type';
 
@@ -28,20 +34,49 @@ interface ReviewDTO {
 export class SupabaseReviewRepository implements IReviewRepository {
   constructor(private supabase: SupabaseService) {}
 
-  async getByLocationId(locationId: string): Promise<Result<ReviewEntity[]>> {
+  async getByLocationId(
+    locationId: string,
+    options?: GetReviewsOptions
+  ): Promise<Result<PaginatedResult<ReviewEntity>>> {
     try {
+      const limit = options?.limit ?? 10;
+      const offset = options?.offset ?? 0;
+      const sortBy = options?.sortBy ?? 'date';
+      const sortOrder = options?.sortOrder ?? 'desc';
+
+      // Get total count first
+      const { count: totalCount, error: countError } = await this.supabase
+        .from('reviews')
+        .select('*', { count: 'exact', head: true })
+        .eq('location_id', locationId);
+
+      if (countError) {
+        return Result.fail(new Error(countError.message));
+      }
+
+      // Build query with pagination
+      const orderColumn = sortBy === 'rating' ? 'rating' : 'created_at';
+      const ascending = sortOrder === 'asc';
+
       const { data, error } = await this.supabase
         .from('reviews')
         .select('*, profiles(username, avatar_url)')
         .eq('location_id', locationId)
-        .order('created_at', { ascending: false });
+        .order(orderColumn, { ascending })
+        .range(offset, offset + limit - 1);
 
       if (error) {
         return Result.fail(new Error(error.message));
       }
 
       const reviews = (data || []).map((dto: ReviewDTO) => this.mapToEntity(dto));
-      return Result.ok(reviews);
+      const total = totalCount ?? 0;
+
+      return Result.ok({
+        data: reviews,
+        totalCount: total,
+        hasMore: offset + reviews.length < total,
+      });
     } catch (error) {
       return Result.fail(error as Error);
     }
@@ -167,38 +202,49 @@ export class SupabaseReviewRepository implements IReviewRepository {
     }
   }
 
-  async getByUserId(userId: string, limit?: number): Promise<Result<any[]>> {
+  async getByUserId(
+    userId: string,
+    options?: GetReviewsOptions
+  ): Promise<Result<PaginatedResult<ReviewEntity>>> {
     try {
-      let query = this.supabase
+      const limit = options?.limit ?? 10;
+      const offset = options?.offset ?? 0;
+      const sortBy = options?.sortBy ?? 'date';
+      const sortOrder = options?.sortOrder ?? 'desc';
+
+      // Get total count first
+      const { count: totalCount, error: countError } = await this.supabase
+        .from('reviews')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+
+      if (countError) {
+        return Result.fail(new Error(countError.message));
+      }
+
+      // Build query with pagination
+      const orderColumn = sortBy === 'rating' ? 'rating' : 'created_at';
+      const ascending = sortOrder === 'asc';
+
+      const { data, error } = await this.supabase
         .from('reviews')
         .select('*, profiles(username, avatar_url), locations(name, image_url)')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (limit) {
-        query = query.limit(limit);
-      }
-
-      const { data, error } = await query;
+        .order(orderColumn, { ascending })
+        .range(offset, offset + limit - 1);
 
       if (error) {
         return Result.fail(new Error(error.message));
       }
 
-      const reviews = (data || []).map((dto: any) => ({
-        id: dto.id,
-        locationId: dto.location_id,
-        userId: dto.user_id,
-        rating: dto.rating,
-        comment: dto.comment,
-        photos: dto.photos || [],
-        tags: dto.tags || [],
-        createdAt: new Date(dto.created_at),
-        updatedAt: new Date(dto.updated_at),
-        locationName: dto.locations?.name,
-        locationImageUrl: dto.locations?.image_url,
-      }));
-      return Result.ok(reviews);
+      const reviews = (data || []).map((dto: ReviewDTO) => this.mapToEntity(dto));
+      const total = totalCount ?? 0;
+
+      return Result.ok({
+        data: reviews,
+        totalCount: total,
+        hasMore: offset + reviews.length < total,
+      });
     } catch (error) {
       return Result.fail(error as Error);
     }

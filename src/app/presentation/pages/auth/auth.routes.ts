@@ -18,6 +18,10 @@ export const AUTH_ROUTES: Routes = [
     loadComponent: () => import('./forgot-password/forgot-password.page').then(m => m.ForgotPasswordPage),
   },
   {
+    path: 'verify-email',
+    loadComponent: () => import('./verify-email/verify-email.page').then(m => m.VerifyEmailPage),
+  },
+  {
     path: '',
     redirectTo: 'onboarding',
     pathMatch: 'full',

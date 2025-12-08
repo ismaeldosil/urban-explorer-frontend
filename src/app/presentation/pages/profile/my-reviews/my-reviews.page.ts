@@ -232,28 +232,22 @@ export class MyReviewsPage implements OnInit {
     this.isLoading.set(true);
 
     try {
-      const result = await this.reviewRepository.getByUserId(user.id);
+      const result = await this.reviewRepository.getByUserId(user.id, {
+        limit: 20,
+        sortBy: 'date',
+        sortOrder: 'desc',
+      });
 
-      if (result.success) {
-        const reviews: ReviewWithLocation[] = result.data.map((review: any) => ({
-          review: ReviewEntity.create({
-            id: review.id,
-            locationId: review.locationId,
-            userId: review.userId,
-            rating: review.rating,
-            comment: review.comment,
-            photos: review.photos,
-            tags: review.tags,
-            createdAt: review.createdAt,
-            updatedAt: review.updatedAt,
-          }),
-          locationName: review.locationName || 'Unknown Location',
-          locationImageUrl: review.locationImageUrl,
+      if (result.success && result.data) {
+        const reviews: ReviewWithLocation[] = result.data.data.map((review: ReviewEntity) => ({
+          review,
+          locationName: 'Unknown Location', // TODO: Join with location data
+          locationImageUrl: undefined,
         }));
 
         this.reviews.set(reviews);
-      } else {
-        console.error('Failed to load reviews:', result.error.message);
+      } else if (!result.success) {
+        console.error('Failed to load reviews:', result.error?.message);
         const toast = await this.toastController.create({
           message: 'Failed to load reviews',
           duration: 2000,

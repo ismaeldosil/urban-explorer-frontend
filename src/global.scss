@@ -38,76 +38,269 @@
 
 /* Leaflet CSS */
 @import 'leaflet/dist/leaflet.css';
+@import 'leaflet.markercluster/dist/MarkerCluster.css';
+@import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 
-/* Custom Location Marker Styles for Leaflet */
-.custom-location-marker {
+/* Map Styles - clusters, markers, user location */
+
+/* =====================================================
+   Marker Cluster Styles
+   ===================================================== */
+.marker-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.15s ease;
+}
+
+.marker-cluster:hover {
+  transform: scale(1.1);
+}
+
+.marker-cluster .cluster-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.marker-cluster-small {
+  background: var(--ion-color-primary);
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+
+.marker-cluster-medium {
+  background: var(--ion-color-secondary);
+  width: 45px;
+  height: 45px;
+  font-size: 16px;
+}
+
+.marker-cluster-large {
+  background: var(--ion-color-tertiary);
+  width: 50px;
+  height: 50px;
+  font-size: 18px;
+}
+
+/* =====================================================
+   Location Marker Styles
+   ===================================================== */
+/* Override Leaflet default marker styles */
+.leaflet-marker-icon.location-marker {
   background: transparent !important;
   border: none !important;
+  width: auto !important;
+  height: auto !important;
+}
 
-  .marker-wrapper {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: pointer;
-    transition: transform 0.2s ease;
+.location-marker .marker-pin {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.15s ease;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3));
+}
 
-    &:hover,
-    &.selected {
-      transform: scale(1.2) translateY(-4px);
-      z-index: 1000 !important;
-    }
+.location-marker .marker-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--marker-color, var(--ion-color-primary));
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 3px solid white;
+  box-sizing: border-box;
+}
 
-    &.selected .marker-pin {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
+.location-marker .marker-head .marker-emoji {
+  transform: rotate(45deg);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.location-marker .marker-rating {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 18px;
+  padding: 0 4px;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.location-marker .marker-rating span {
+  font-size: 10px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.location-marker.selected .marker-pin {
+  transform: scale(1.3);
+  z-index: 1000 !important;
+}
+
+.location-marker.selected .marker-head {
+  box-shadow: 0 0 0 4px rgba(56, 128, 255, 0.3);
+}
+
+/* Category-specific colors */
+.location-marker.restaurant .marker-head { background: #ff6b35; }
+.location-marker.cafe .marker-head { background: #8b4513; }
+.location-marker.bar .marker-head { background: #e91e63; }
+.location-marker.park .marker-head { background: #28a745; }
+.location-marker.museum .marker-head { background: #9c27b0; }
+.location-marker.landmark .marker-head { background: #795548; }
+.location-marker.shop .marker-head { background: #3880ff; }
+.location-marker.entertainment .marker-head { background: #00bcd4; }
+
+/* =====================================================
+   User Location Marker
+   ===================================================== */
+.user-location-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.user-location-marker .user-marker-outer {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  background: rgba(66, 133, 244, 0.2);
+  border-radius: 50%;
+  animation: pulse-user 2s infinite;
+}
+
+.user-location-marker .user-marker-outer::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  background: rgba(66, 133, 244, 0.1);
+  border-radius: 50%;
+  animation: pulse-outer 2s infinite;
+}
+
+.user-location-marker .user-marker-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  background: #4285f4;
+  border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes pulse-user {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pulse-outer {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+  100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+}
+
+/* =====================================================
+   Leaflet Container Overrides
+   ===================================================== */
+.leaflet-container {
+  background: #f3f4f6;
+  font-family: inherit;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.leaflet-popup-content {
+  margin: 8px 12px;
+  font-size: 14px;
+}
+
+.leaflet-popup-tip {
+  background: white;
+}
+
+/* Hide default zoom controls (we use custom) */
+.leaflet-control-zoom {
+  display: none !important;
+}
+
+/* Attribution styling */
+.leaflet-control-attribution {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.8) !important;
+  padding: 2px 6px;
+  border-radius: 4px 0 0 0;
+}
+
+.leaflet-control-attribution a {
+  color: #6b7280;
+}
+
+/* =====================================================
+   Dark Mode
+   ===================================================== */
+@media (prefers-color-scheme: dark) {
+  .leaflet-container {
+    background: #374151;
   }
 
-  .marker-pin {
-    width: 36px;
-    height: 36px;
-    border-radius: 50% 50% 50% 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transform: rotate(-45deg);
-    border: 2px solid white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    transition: box-shadow 0.2s ease;
-
-    ion-icon {
-      transform: rotate(45deg);
-      font-size: 18px;
-      color: white;
-    }
+  .leaflet-popup-content-wrapper,
+  .leaflet-popup-tip {
+    background: #1f2937;
+    color: #f9fafb;
   }
 
-  .marker-shadow {
-    width: 14px;
-    height: 6px;
-    background: rgba(0, 0, 0, 0.15);
-    border-radius: 50%;
-    margin-top: 2px;
+  .leaflet-control-attribution {
+    background: rgba(0, 0, 0, 0.6) !important;
+    color: #9ca3af;
   }
 
-  .marker-rating {
-    position: absolute;
-    bottom: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    padding: 2px 6px;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-    font-size: 10px;
-    font-weight: 600;
+  .leaflet-control-attribution a {
+    color: #6b7280;
+  }
 
-    ion-icon {
-      font-size: 10px;
-      color: #fbbf24;
-    }
+  .marker-cluster {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  .location-marker .marker-head {
+    border-color: #1f2937;
+  }
+
+  .location-marker .marker-rating {
+    background: #1f2937;
+  }
+
+  .location-marker .marker-rating span {
+    color: #f9fafb;
   }
 }

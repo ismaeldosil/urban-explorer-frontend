@@ -1,60 +1,184 @@
-.search-wrapper {
+@use 'variables' as *;
+
+// Host and ion-content setup for full-screen map
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+ion-content {
+  --background: transparent;
+
+  &::part(scroll) {
+    position: relative;
+    height: 100%;
+  }
+}
+
+// Header styles
+.explore-header {
+  ion-toolbar {
+    --background: var(--ue-bg-white);
+    --border-width: 0;
+    --padding-start: 0;
+    --padding-end: 0;
+  }
+}
+
+.header-content {
   display: flex;
   align-items: center;
-  width: calc(100% - 32px);
-  margin: 8px 16px;
-  padding: 12px 16px;
-  background: #F5F5F5;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-lg;
+}
+
+.search-trigger {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  padding: $spacing-md $spacing-lg;
+  background: var(--ue-bg-light);
   border: none;
-  border-radius: 24px;
+  border-radius: $radius-2xl;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color $transition-fast;
 
   &:active {
-    background: #EBEBEB;
+    background: var(--ue-bg-gray);
   }
 
   .search-icon {
-    font-size: 22px;
-    color: var(--ion-color-medium);
-    margin-right: 12px;
+    font-size: 20px;
+    color: var(--ue-text-secondary);
+    margin-right: $spacing-md;
     flex-shrink: 0;
   }
 
   .search-placeholder {
-    font-size: 16px;
-    color: var(--ion-color-medium);
+    font-size: $font-size-md;
+    color: var(--ue-text-secondary);
     text-align: left;
   }
 }
 
-.segment-toolbar {
-  --padding-start: 8px;
-  --padding-end: 8px;
-}
+.notification-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: none;
+  border-radius: $radius-full;
+  cursor: pointer;
+  transition: background-color $transition-fast;
 
-ion-segment-button {
-  --indicator-height: 3px;
-  --indicator-color: var(--ion-color-primary);
-  min-width: auto;
-  font-size: 12px;
-  --padding-start: 8px;
-  --padding-end: 8px;
+  &:active {
+    background: var(--ue-bg-light);
+  }
 
   ion-icon {
-    font-size: 18px;
+    font-size: 24px;
+    color: var(--ue-text-primary);
   }
 
-  ion-label {
-    font-size: 11px;
+  .notification-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    background: var(--ion-color-danger);
+    color: white;
+    font-size: 10px;
+    font-weight: $font-weight-bold;
+    border-radius: $radius-full;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 
+// Category chips
+.category-chips-wrapper {
+  background: var(--ue-bg-white);
+  padding: $spacing-sm 0;
+  border-bottom: 1px solid var(--ue-border-light);
+}
+
+.category-chips {
+  display: flex;
+  gap: $spacing-sm;
+  padding: 0 $spacing-lg;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.category-chip {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  background: var(--ue-bg-light);
+  border: 1px solid transparent;
+  border-radius: $radius-2xl;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  ion-icon {
+    font-size: 16px;
+    color: var(--ue-text-secondary);
+  }
+
+  span {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: var(--ue-text-secondary);
+  }
+
+  &.active {
+    background: rgba(56, 128, 255, 0.1);
+    border-color: var(--ion-color-primary);
+
+    ion-icon,
+    span {
+      color: var(--ion-color-primary);
+    }
+  }
+
+  &:active:not(.active) {
+    background: var(--ue-bg-gray);
+  }
+}
+
+// Map container - must fill the ion-content's inner scroll area
 .map-container {
-  width: 100%;
-  height: 100%;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 0;
+
+  // Ensure Leaflet container fills the space
+  .leaflet-container {
+    width: 100% !important;
+    height: 100% !important;
+  }
 }
 
+// Loading overlay
 .loading-overlay {
   position: absolute;
   top: 0;
@@ -66,56 +190,181 @@ ion-segment-button {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: $z-overlay;
+
+  ion-spinner {
+    width: 40px;
+    height: 40px;
+  }
 
   p {
-    margin-top: 16px;
-    color: var(--ion-color-medium);
+    margin-top: $spacing-lg;
+    font-size: $font-size-sm;
+    color: var(--ue-text-secondary);
   }
 }
 
+// Error toast
 .error-toast {
   position: absolute;
   bottom: 100px;
-  left: 16px;
-  right: 16px;
+  left: $spacing-lg;
+  right: $spacing-lg;
   background: var(--ion-color-danger);
   color: white;
-  padding: 12px 16px;
-  border-radius: 8px;
+  padding: $spacing-md $spacing-lg;
+  border-radius: $radius-lg;
   display: flex;
   align-items: center;
-  gap: 8px;
-  z-index: 999;
-}
-
-.location-badge {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  background: white;
-  padding: 8px 12px;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  z-index: 500;
+  gap: $spacing-sm;
+  z-index: 1001;
+  box-shadow: $shadow-lg;
+  animation: slideInUp 0.3s ease;
 
   ion-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+    font-size: $font-size-sm;
+  }
+
+  .error-dismiss {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: $radius-full;
+    cursor: pointer;
+
+    ion-icon {
+      font-size: 16px;
+    }
+  }
+}
+
+// GPS permission banner
+.gps-banner {
+  position: absolute;
+  top: $spacing-lg;
+  left: $spacing-lg;
+  right: $spacing-lg;
+  background: var(--ion-color-warning);
+  color: var(--ion-color-warning-contrast);
+  padding: $spacing-md $spacing-lg;
+  border-radius: $radius-lg;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  z-index: 1000;
+  box-shadow: $shadow-md;
+  animation: slideInDown 0.3s ease;
+
+  ion-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+  }
+
+  .gps-settings-btn {
+    padding: $spacing-xs $spacing-md;
+    background: rgba(0, 0, 0, 0.2);
+    border: none;
+    border-radius: $radius-md;
+    color: inherit;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    cursor: pointer;
+
+    &:active {
+      background: rgba(0, 0, 0, 0.3);
+    }
+  }
+}
+
+// Location badge
+.location-badge {
+  position: absolute;
+  top: $spacing-lg;
+  left: $spacing-lg;
+  background: var(--ue-bg-white);
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-2xl;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  box-shadow: $shadow-md;
+  z-index: 1000;
+
+  ion-icon {
+    font-size: 16px;
     color: var(--ion-color-primary);
   }
 
   span {
-    font-size: 13px;
-    font-weight: 500;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: var(--ue-text-primary);
   }
 }
 
-ion-fab-button {
-  --background: white;
-  --color: var(--ion-color-primary);
-  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+// Map controls - z-index 1000+ to stay above Leaflet elements (which use up to ~400)
+.map-controls {
+  position: absolute;
+  bottom: 100px;
+  right: $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  z-index: 1000;
+}
+
+.map-control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: var(--ue-bg-white);
+  border: none;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-fab;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  ion-icon {
+    font-size: 22px;
+    color: var(--ion-color-primary);
+  }
+
+  ion-spinner {
+    width: 20px;
+    height: 20px;
+    --color: var(--ion-color-primary);
+  }
+
+  &:active {
+    transform: scale(0.95);
+    background: var(--ue-bg-light);
+  }
+
+  &.locate-btn {
+    margin-top: $spacing-sm;
+
+    &.loading {
+      pointer-events: none;
+    }
+  }
 }
 
 // Preview sheet styles
@@ -126,7 +375,7 @@ ion-fab-button {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.3);
-  z-index: 998;
+  z-index: $z-modal - 1;
   animation: fadeIn 0.2s ease;
 }
 
@@ -136,21 +385,25 @@ ion-fab-button {
   left: 0;
   right: 0;
   background: var(--ion-background-color, #fff);
-  border-radius: 24px 24px 0 0;
-  padding: 12px 16px calc(var(--ion-safe-area-bottom, 0px) + 16px);
-  z-index: 999;
+  border-radius: $radius-2xl $radius-2xl 0 0;
+  padding: $spacing-md $spacing-lg calc(var(--ion-safe-area-bottom, 0px) + $spacing-lg);
+  z-index: $z-modal;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
   animation: slideUp 0.3s ease;
+  touch-action: none;
+  will-change: transform;
+  transition: transform 0.1s ease-out;
 }
 
 .preview-handle {
   width: 40px;
   height: 4px;
-  background: var(--ion-color-medium-tint);
+  background: var(--ue-border-light);
   border-radius: 2px;
-  margin: 0 auto 12px;
+  margin: 0 auto $spacing-md;
 }
 
+// Animations
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -166,5 +419,55 @@ ion-fab-button {
   }
   to {
     transform: translateY(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+// Dark mode overrides
+@media (prefers-color-scheme: dark) {
+  .search-trigger {
+    background: var(--ue-bg-light);
+
+    &:active {
+      background: var(--ue-bg-gray);
+    }
+  }
+
+  .category-chip {
+    background: var(--ue-bg-light);
+
+    &.active {
+      background: rgba(56, 128, 255, 0.2);
+    }
+  }
+
+  .loading-overlay {
+    background: rgba(18, 18, 18, 0.9);
+  }
+
+  .map-control-btn,
+  .location-badge {
+    background: var(--ue-bg-white);
   }
 }

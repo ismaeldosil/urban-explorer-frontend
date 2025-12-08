@@ -35,6 +35,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'location/:id/reviews',
+    loadComponent: () =>
+      import('./presentation/pages/location-detail/location-reviews.page').then(
+        (m) => m.LocationReviewsPage
+      ),
+  },
+  {
     path: 'profile',
     canActivate: [authGuard],
     children: [

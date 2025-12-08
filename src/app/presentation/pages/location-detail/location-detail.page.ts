@@ -1,49 +1,49 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  inject,
+  signal,
+  computed,
+  ViewChild,
+  ElementRef,
+  AfterViewInit,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButtons,
-  IonBackButton,
-  IonButton,
-  IonIcon,
-  IonChip,
-  IonLabel,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardContent,
-  IonList,
-  IonItem,
-  IonAvatar,
-  IonSkeletonText,
-  IonSpinner,
-  IonBadge,
-  IonFab,
-  IonFabButton,
-  AlertController,
-  ToastController,
-} from '@ionic/angular/standalone';
+import { IonicModule, AlertController, ToastController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
   heart,
   heartOutline,
   star,
   starOutline,
-  location,
-  navigate,
-  share,
-  call,
-  globe,
-  time,
+  locationOutline,
+  navigateOutline,
+  shareOutline,
+  shareSocialOutline,
+  callOutline,
+  globeOutline,
+  timeOutline,
   person,
-  chatbubble,
-  add,
-  chevronForward,
+  chatbubbleOutline,
+  chatbubblesOutline,
+  createOutline,
+  chevronForwardOutline,
+  chevronUpOutline,
+  chevronDownOutline,
+  arrowBackOutline,
+  imagesOutline,
+  informationCircleOutline,
+  documentTextOutline,
+  sparklesOutline,
   mapOutline,
+  openOutline,
+  refreshOutline,
+  alertCircleOutline,
+  pricetagOutline,
+  cashOutline,
 } from 'ionicons/icons';
 
 import { LocationEntity } from '@core/entities/location.entity';
@@ -54,6 +54,7 @@ import { FAVORITE_REPOSITORY, REVIEW_REPOSITORY } from '@infrastructure/di/token
 import { StarRatingComponent } from '@presentation/components/star-rating';
 import { ImageCarouselComponent } from '@presentation/components/image-carousel';
 
+/** Review display model */
 interface ReviewDisplay {
   id: string;
   userName: string;
@@ -64,405 +65,119 @@ interface ReviewDisplay {
   photos: string[];
 }
 
+/** Feature/amenity model */
+interface Feature {
+  id: string;
+  name: string;
+  icon: string;
+}
+
+/** Day hours model */
+interface DayHours {
+  name: string;
+  hours: string;
+  isToday: boolean;
+}
+
 @Component({
   selector: 'app-location-detail',
   standalone: true,
   imports: [
     CommonModule,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonContent,
-    IonButtons,
-    IonBackButton,
-    IonButton,
-    IonIcon,
-    IonChip,
-    IonLabel,
-    IonCard,
-    IonCardHeader,
-    IonCardTitle,
-    IonCardContent,
-    IonList,
-    IonItem,
-    IonAvatar,
-    IonSkeletonText,
-    IonSpinner,
-    IonBadge,
-    IonFab,
-    IonFabButton,
+    IonicModule,
     StarRatingComponent,
     ImageCarouselComponent,
   ],
-  template: `
-    <ion-header>
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-back-button defaultHref="/tabs/explore"></ion-back-button>
-        </ion-buttons>
-        <ion-title>{{ location()?.name || 'Location' }}</ion-title>
-        <ion-buttons slot="end">
-          <ion-button (click)="shareLocation()">
-            <ion-icon slot="icon-only" name="share"></ion-icon>
-          </ion-button>
-          <ion-button (click)="toggleFavorite()">
-            <ion-icon
-              slot="icon-only"
-              [name]="isFavorite() ? 'heart' : 'heart-outline'"
-              [color]="isFavorite() ? 'danger' : 'medium'"
-            ></ion-icon>
-          </ion-button>
-        </ion-buttons>
-      </ion-toolbar>
-    </ion-header>
-
-    <ion-content>
-      <!-- Loading State -->
-      @if (isLoading()) {
-        <div class="loading-container">
-          <ion-skeleton-text [animated]="true" style="width: 100%; height: 250px;"></ion-skeleton-text>
-          <div class="skeleton-content">
-            <ion-skeleton-text [animated]="true" style="width: 70%; height: 24px;"></ion-skeleton-text>
-            <ion-skeleton-text [animated]="true" style="width: 40%; height: 16px; margin-top: 8px;"></ion-skeleton-text>
-            <ion-skeleton-text [animated]="true" style="width: 90%; height: 60px; margin-top: 16px;"></ion-skeleton-text>
-          </div>
-        </div>
-      }
-
-      <!-- Error State -->
-      @if (error()) {
-        <div class="error-container">
-          <ion-icon name="alert-circle-outline" color="danger"></ion-icon>
-          <h2>Error loading location</h2>
-          <p>{{ error() }}</p>
-          <ion-button (click)="loadLocation()">Try Again</ion-button>
-        </div>
-      }
-
-      <!-- Location Content -->
-      @if (location() && !isLoading()) {
-        <!-- Image Gallery -->
-        <div class="gallery-container">
-          <app-image-carousel [images]="locationImages()"></app-image-carousel>
-          <div class="gallery-overlay">
-            <ion-chip [color]="getCategoryColor(location()!.category)">
-              <ion-label>{{ location()!.category }}</ion-label>
-            </ion-chip>
-          </div>
-        </div>
-
-        <!-- Location Info -->
-        <div class="location-info">
-          <h1>{{ location()!.name }}</h1>
-
-          <div class="rating-row">
-            <app-star-rating [rating]="location()!.rating" [readonly]="true"></app-star-rating>
-            <span class="rating-text">{{ location()!.rating.toFixed(1) }}</span>
-            <span class="reviews-count">({{ reviewsCount() }} reviews)</span>
-          </div>
-
-          <div class="address-row">
-            <ion-icon name="location"></ion-icon>
-            <span>{{ location()!.address }}, {{ location()!.city }}</span>
-          </div>
-
-          <p class="description">{{ location()!.description }}</p>
-
-          <!-- Action Buttons -->
-          <div class="action-buttons">
-            <ion-button expand="block" (click)="openDirections()">
-              <ion-icon slot="start" name="navigate"></ion-icon>
-              Get Directions
-            </ion-button>
-            <ion-button expand="block" fill="outline" (click)="showOnMap()">
-              <ion-icon slot="start" name="map-outline"></ion-icon>
-              Show on Map
-            </ion-button>
-          </div>
-        </div>
-
-        <!-- Reviews Section -->
-        <ion-card>
-          <ion-card-header>
-            <ion-card-title>
-              Reviews
-              <ion-badge color="primary">{{ reviewsCount() }}</ion-badge>
-            </ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            @if (isLoadingReviews()) {
-              <div class="reviews-loading">
-                <ion-spinner name="crescent"></ion-spinner>
-              </div>
-            } @else if (reviews().length === 0) {
-              <div class="no-reviews">
-                <ion-icon name="chatbubble-outline"></ion-icon>
-                <p>No reviews yet. Be the first to review!</p>
-              </div>
-            } @else {
-              <ion-list>
-                @for (review of reviews().slice(0, 3); track review.id) {
-                  <ion-item lines="none">
-                    <ion-avatar slot="start">
-                      @if (review.userAvatar) {
-                        <img [src]="review.userAvatar" />
-                      } @else {
-                        <div class="default-avatar">
-                          <ion-icon name="person"></ion-icon>
-                        </div>
-                      }
-                    </ion-avatar>
-                    <ion-label>
-                      <h3>{{ review.userName }}</h3>
-                      <div class="review-rating">
-                        <app-star-rating [rating]="review.rating" [readonly]="true" [size]="'small'"></app-star-rating>
-                        <span class="review-date">{{ formatDate(review.date) }}</span>
-                      </div>
-                      <p class="review-comment">{{ review.comment }}</p>
-                    </ion-label>
-                  </ion-item>
-                }
-              </ion-list>
-
-              @if (reviews().length > 3) {
-                <ion-button expand="block" fill="clear" (click)="viewAllReviews()">
-                  View all {{ reviewsCount() }} reviews
-                  <ion-icon slot="end" name="chevron-forward"></ion-icon>
-                </ion-button>
-              }
-            }
-          </ion-card-content>
-        </ion-card>
-
-        <!-- Write Review FAB -->
-        @if (isAuthenticated()) {
-          <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-            <ion-fab-button (click)="writeReview()">
-              <ion-icon name="add"></ion-icon>
-            </ion-fab-button>
-          </ion-fab>
-        }
-      }
-    </ion-content>
-  `,
-  styles: [`
-    .loading-container {
-      padding: 0;
-    }
-
-    .skeleton-content {
-      padding: 16px;
-    }
-
-    .error-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 60vh;
-      padding: 20px;
-      text-align: center;
-
-      ion-icon {
-        font-size: 64px;
-        margin-bottom: 16px;
-      }
-
-      h2 {
-        margin: 0 0 8px;
-      }
-
-      p {
-        color: var(--ion-color-medium);
-        margin-bottom: 16px;
-      }
-    }
-
-    .gallery-container {
-      position: relative;
-      width: 100%;
-      height: 280px;
-      overflow: hidden;
-
-      app-image-carousel {
-        display: block;
-        height: 100%;
-      }
-
-      .gallery-overlay {
-        position: absolute;
-        bottom: 12px;
-        left: 12px;
-        z-index: 10;
-      }
-    }
-
-    .location-info {
-      padding: 16px;
-
-      h1 {
-        margin: 0 0 8px;
-        font-size: 24px;
-        font-weight: 700;
-      }
-
-      .rating-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 12px;
-
-        .rating-text {
-          font-weight: 600;
-          font-size: 16px;
-        }
-
-        .reviews-count {
-          color: var(--ion-color-medium);
-          font-size: 14px;
-        }
-      }
-
-      .address-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--ion-color-medium);
-        margin-bottom: 16px;
-
-        ion-icon {
-          font-size: 18px;
-        }
-      }
-
-      .description {
-        color: var(--ion-text-color);
-        line-height: 1.6;
-        margin-bottom: 20px;
-      }
-
-      .action-buttons {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-    }
-
-    ion-card {
-      margin: 16px;
-
-      ion-card-title {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-    }
-
-    .reviews-loading {
-      display: flex;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .no-reviews {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      color: var(--ion-color-medium);
-
-      ion-icon {
-        font-size: 48px;
-        margin-bottom: 8px;
-      }
-
-      p {
-        margin: 0;
-        text-align: center;
-      }
-    }
-
-    ion-item {
-      --padding-start: 0;
-      --inner-padding-end: 0;
-      margin-bottom: 16px;
-    }
-
-    ion-avatar {
-      --border-radius: 50%;
-      width: 40px;
-      height: 40px;
-    }
-
-    .default-avatar {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--ion-color-light);
-      border-radius: 50%;
-
-      ion-icon {
-        font-size: 20px;
-        color: var(--ion-color-medium);
-      }
-    }
-
-    .review-rating {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 4px 0;
-
-      .review-date {
-        font-size: 12px;
-        color: var(--ion-color-medium);
-      }
-    }
-
-    .review-comment {
-      margin: 4px 0 0;
-      white-space: pre-wrap;
-    }
-
-    ion-fab {
-      margin-bottom: 16px;
-      margin-right: 8px;
-    }
-  `],
+  templateUrl: './location-detail.page.html',
+  styleUrls: ['./location-detail.page.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LocationDetailPage implements OnInit {
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  private alertController = inject(AlertController);
-  private toastController = inject(ToastController);
-  private getLocationDetailUseCase = inject(GetLocationDetailUseCase);
-  private authStateService = inject(AuthStateService);
-  private favoriteRepository = inject(FAVORITE_REPOSITORY);
-  private reviewRepository = inject(REVIEW_REPOSITORY);
+export class LocationDetailPage implements OnInit, OnDestroy, AfterViewInit {
+  @ViewChild('miniMapContainer') miniMapContainer!: ElementRef<HTMLDivElement>;
 
-  // State
-  location = signal<LocationEntity | null>(null);
-  reviews = signal<ReviewDisplay[]>([]);
-  isLoading = signal(true);
-  isLoadingReviews = signal(true);
-  error = signal<string | null>(null);
-  isFavorite = signal(false);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly alertController = inject(AlertController);
+  private readonly toastController = inject(ToastController);
+  private readonly getLocationDetailUseCase = inject(GetLocationDetailUseCase);
+  private readonly authStateService = inject(AuthStateService);
+  private readonly favoriteRepository = inject(FAVORITE_REPOSITORY);
+  private readonly reviewRepository = inject(REVIEW_REPOSITORY);
 
-  // Computed
-  isAuthenticated = computed(() => this.authStateService.isAuthenticated());
-  currentUser = computed(() => this.authStateService.currentUser());
-  reviewsCount = computed(() => this.reviews().length);
-  locationImages = computed(() => {
+  private miniMap: L.Map | null = null;
+
+  // Core state signals
+  readonly location = signal<LocationEntity | null>(null);
+  readonly reviews = signal<ReviewDisplay[]>([]);
+  readonly isLoading = signal(true);
+  readonly isLoadingReviews = signal(true);
+  readonly error = signal<string | null>(null);
+  readonly isFavorite = signal(false);
+  readonly totalReviewsCount = signal(0);
+
+  // UI state signals
+  readonly hoursExpanded = signal(false);
+  readonly descriptionExpanded = signal(false);
+  readonly currentImageIndex = signal(0);
+
+  // Computed signals
+  readonly isAuthenticated = computed(() => this.authStateService.isAuthenticated());
+  readonly currentUser = computed(() => this.authStateService.currentUser());
+  readonly reviewsCount = computed(() => this.totalReviewsCount());
+
+  readonly locationImages = computed(() => {
     const loc = this.location();
     if (!loc) return [];
-    // Use images array if available, otherwise fallback to single imageUrl
     if (loc.images && loc.images.length > 0) {
       return loc.images;
     }
     return loc.imageUrl ? [loc.imageUrl] : [];
   });
+
+  readonly priceLevel = computed(() => {
+    const loc = this.location();
+    return loc?.priceLevel ?? null;
+  });
+
+  readonly distance = computed(() => {
+    // TODO: Calculate from user's current location
+    return '1.2 km';
+  });
+
+  readonly features = computed((): Feature[] => {
+    const loc = this.location();
+    if (!loc?.amenities) return [];
+
+    const amenityIcons: Record<string, string> = {
+      wifi: 'wifi-outline',
+      parking: 'car-outline',
+      wheelchair: 'accessibility-outline',
+      pets: 'paw-outline',
+      outdoor: 'sunny-outline',
+      delivery: 'bicycle-outline',
+      reservation: 'calendar-outline',
+      creditCard: 'card-outline',
+    };
+
+    return loc.amenities.map((amenity, index) => ({
+      id: `amenity-${index}`,
+      name: amenity,
+      icon: amenityIcons[amenity.toLowerCase()] || 'checkmark-circle-outline',
+    }));
+  });
+
+  // Opening hours
+  readonly isOpen = computed(() => {
+    // TODO: Calculate from actual hours
+    const hour = new Date().getHours();
+    return hour >= 9 && hour < 22;
+  });
+
+  readonly openingTime = computed(() => '09:00');
+  readonly closingTime = computed(() => '22:00');
+
+  // Week days for hours display
+  readonly weekDays: DayHours[] = this.generateWeekDays();
 
   constructor() {
     addIcons({
@@ -470,17 +185,31 @@ export class LocationDetailPage implements OnInit {
       heartOutline,
       star,
       starOutline,
-      location,
-      navigate,
-      share,
-      call,
-      globe,
-      time,
+      locationOutline,
+      navigateOutline,
+      shareOutline,
+      shareSocialOutline,
+      callOutline,
+      globeOutline,
+      timeOutline,
       person,
-      chatbubble,
-      add,
-      chevronForward,
+      chatbubbleOutline,
+      chatbubblesOutline,
+      createOutline,
+      chevronForwardOutline,
+      chevronUpOutline,
+      chevronDownOutline,
+      arrowBackOutline,
+      imagesOutline,
+      informationCircleOutline,
+      documentTextOutline,
+      sparklesOutline,
       mapOutline,
+      openOutline,
+      refreshOutline,
+      alertCircleOutline,
+      pricetagOutline,
+      cashOutline,
     });
   }
 
@@ -488,10 +217,27 @@ export class LocationDetailPage implements OnInit {
     this.loadLocation();
   }
 
+  ngAfterViewInit(): void {
+    // Mini map will be initialized after location loads
+  }
+
+  ngOnDestroy(): void {
+    if (this.miniMap) {
+      this.miniMap.remove();
+      this.miniMap = null;
+    }
+  }
+
+  // Navigation
+  goBack(): void {
+    this.router.navigate(['/tabs/explore']);
+  }
+
+  // Location loading
   async loadLocation(): Promise<void> {
     const locationId = this.route.snapshot.paramMap.get('id');
     if (!locationId) {
-      this.error.set('Location ID not provided');
+      this.error.set('ID de ubicación no proporcionado');
       this.isLoading.set(false);
       return;
     }
@@ -505,6 +251,8 @@ export class LocationDetailPage implements OnInit {
       this.location.set(result.data);
       this.loadReviews(locationId);
       this.checkFavoriteStatus(locationId);
+      // Initialize mini map after a small delay
+      setTimeout(() => this.initMiniMap(), 100);
     } else {
       this.error.set(result.error.message);
     }
@@ -516,12 +264,17 @@ export class LocationDetailPage implements OnInit {
     this.isLoadingReviews.set(true);
 
     try {
-      const result = await this.reviewRepository.getByLocationId(locationId);
+      const result = await this.reviewRepository.getByLocationId(locationId, {
+        limit: 3,
+        offset: 0,
+        sortBy: 'date',
+        sortOrder: 'desc',
+      });
 
       if (result.success && result.data) {
-        const reviewDisplays: ReviewDisplay[] = result.data.map((review: ReviewEntity) => ({
+        const reviewDisplays: ReviewDisplay[] = result.data.data.map((review: ReviewEntity) => ({
           id: review.id,
-          userName: 'User', // TODO: Fetch user name
+          userName: 'Usuario',
           userAvatar: undefined,
           rating: review.rating,
           comment: review.comment,
@@ -529,6 +282,7 @@ export class LocationDetailPage implements OnInit {
           photos: review.photos,
         }));
         this.reviews.set(reviewDisplays);
+        this.totalReviewsCount.set(result.data.totalCount);
       }
     } catch (error) {
       console.error('Failed to load reviews:', error);
@@ -551,17 +305,18 @@ export class LocationDetailPage implements OnInit {
     }
   }
 
+  // Favorite toggle
   async toggleFavorite(): Promise<void> {
     const user = this.currentUser();
     const loc = this.location();
 
     if (!user) {
       const alert = await this.alertController.create({
-        header: 'Login Required',
-        message: 'Please login to add favorites',
+        header: 'Iniciar sesión',
+        message: 'Inicia sesión para guardar favoritos',
         buttons: [
-          { text: 'Cancel', role: 'cancel' },
-          { text: 'Login', handler: () => this.router.navigate(['/auth/login']) },
+          { text: 'Cancelar', role: 'cancel' },
+          { text: 'Iniciar sesión', handler: () => this.router.navigate(['/auth/login']) },
         ],
       });
       await alert.present();
@@ -577,21 +332,22 @@ export class LocationDetailPage implements OnInit {
         const result = await this.favoriteRepository.delete(user.id, loc.id);
         if (result.success) {
           this.isFavorite.set(false);
-          this.showToast('Removed from favorites');
+          this.showToast('Eliminado de favoritos');
         }
       } else {
         const result = await this.favoriteRepository.create(user.id, loc.id);
         if (result.success) {
           this.isFavorite.set(true);
-          this.showToast('Added to favorites');
+          this.showToast('Agregado a favoritos');
         }
       }
     } catch (error) {
       console.error('Failed to toggle favorite:', error);
-      this.showToast('Failed to update favorite', 'danger');
+      this.showToast('Error al actualizar favorito', 'danger');
     }
   }
 
+  // Share
   async shareLocation(): Promise<void> {
     const loc = this.location();
     if (!loc) return;
@@ -600,18 +356,19 @@ export class LocationDetailPage implements OnInit {
       if (navigator.share) {
         await navigator.share({
           title: loc.name,
-          text: loc.description,
+          text: loc.description || `Descubre ${loc.name} en Urban Explorer`,
           url: window.location.href,
         });
       } else {
         await navigator.clipboard.writeText(window.location.href);
-        this.showToast('Link copied to clipboard');
+        this.showToast('Enlace copiado');
       }
     } catch (error) {
       console.error('Failed to share:', error);
     }
   }
 
+  // Actions
   openDirections(): void {
     const loc = this.location();
     if (!loc) return;
@@ -621,19 +378,51 @@ export class LocationDetailPage implements OnInit {
     window.open(url, '_blank');
   }
 
-  showOnMap(): void {
+  callLocation(): void {
+    const loc = this.location();
+    if (!loc?.phone) return;
+
+    window.open(`tel:${loc.phone}`, '_self');
+  }
+
+  openWebsite(): void {
+    const loc = this.location();
+    if (!loc?.website) return;
+
+    window.open(loc.website, '_blank');
+  }
+
+  openInMaps(): void {
     const loc = this.location();
     if (!loc) return;
 
-    this.router.navigate(['/tabs/explore'], {
-      queryParams: {
-        lat: loc.coordinates.latitude,
-        lng: loc.coordinates.longitude,
-        locationId: loc.id,
-      },
-    });
+    const coords = loc.coordinates;
+    const url = `https://www.google.com/maps/search/?api=1&query=${coords.latitude},${coords.longitude}`;
+    window.open(url, '_blank');
   }
 
+  // UI toggles
+  toggleHoursExpanded(): void {
+    this.hoursExpanded.update(v => !v);
+  }
+
+  toggleDescription(): void {
+    this.descriptionExpanded.update(v => !v);
+  }
+
+  isDescriptionLong(): boolean {
+    const loc = this.location();
+    return (loc?.description?.length ?? 0) > 150;
+  }
+
+  // Price level display
+  getPriceLevelDisplay(): string {
+    const level = this.priceLevel();
+    if (level === null) return '';
+    return '$'.repeat(level);
+  }
+
+  // Reviews
   async writeReview(): Promise<void> {
     const loc = this.location();
     if (!loc) return;
@@ -648,33 +437,88 @@ export class LocationDetailPage implements OnInit {
     this.router.navigate(['/location', loc.id, 'reviews']);
   }
 
+  // Date formatting
   formatDate(date: Date): string {
     const now = new Date();
-    const diff = now.getTime() - date.getTime();
+    const diff = now.getTime() - new Date(date).getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (days === 0) return 'Today';
-    if (days === 1) return 'Yesterday';
-    if (days < 7) return `${days} days ago`;
-    if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
-    if (days < 365) return `${Math.floor(days / 30)} months ago`;
-    return `${Math.floor(days / 365)} years ago`;
+    if (days === 0) return 'Hoy';
+    if (days === 1) return 'Ayer';
+    if (days < 7) return `hace ${days} días`;
+    if (days < 30) return `hace ${Math.floor(days / 7)} semanas`;
+    if (days < 365) return `hace ${Math.floor(days / 30)} meses`;
+    return `hace ${Math.floor(days / 365)} años`;
   }
 
-  getCategoryColor(category: string): string {
-    const colors: Record<string, string> = {
-      restaurant: 'tertiary',
-      cafe: 'warning',
-      bar: 'danger',
-      park: 'success',
-      museum: 'primary',
-      landmark: 'secondary',
-      shopping: 'medium',
-      entertainment: 'tertiary',
-    };
-    return colors[category.toLowerCase()] || 'primary';
+  // Mini map initialization
+  private async initMiniMap(): Promise<void> {
+    const loc = this.location();
+    if (!loc || !this.miniMapContainer?.nativeElement) return;
+
+    try {
+      const L = await import('leaflet');
+
+      if (this.miniMap) {
+        this.miniMap.remove();
+      }
+
+      this.miniMap = L.map(this.miniMapContainer.nativeElement, {
+        zoomControl: false,
+        attributionControl: false,
+        dragging: false,
+        touchZoom: false,
+        scrollWheelZoom: false,
+        doubleClickZoom: false,
+      }).setView(
+        [loc.coordinates.latitude, loc.coordinates.longitude],
+        15
+      );
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+      }).addTo(this.miniMap);
+
+      // Custom marker
+      const markerIcon = L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="
+          width: 32px;
+          height: 32px;
+          background: var(--ion-color-primary, #3880ff);
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg);
+          border: 3px solid white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        "></div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+      });
+
+      L.marker(
+        [loc.coordinates.latitude, loc.coordinates.longitude],
+        { icon: markerIcon }
+      ).addTo(this.miniMap);
+    } catch (error) {
+      console.error('Failed to initialize mini map:', error);
+    }
   }
 
+  // Generate week days for hours display
+  private generateWeekDays(): DayHours[] {
+    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    const today = new Date().getDay();
+    // Convert Sunday=0 to Monday=0 format
+    const todayIndex = today === 0 ? 6 : today - 1;
+
+    return days.map((name, index) => ({
+      name,
+      hours: index < 5 ? '09:00 - 22:00' : '10:00 - 23:00',
+      isToday: index === todayIndex,
+    }));
+  }
+
+  // Toast helper
   private async showToast(message: string, color: string = 'success'): Promise<void> {
     const toast = await this.toastController.create({
       message,

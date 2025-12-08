@@ -6,6 +6,7 @@ import { IFavoriteRepository } from '@core/repositories/favorite.repository';
 import { IReviewRepository } from '@core/repositories/review.repository';
 import { IGeolocationPort } from '@application/ports/geolocation.port';
 import { IStoragePort } from '@application/ports/storage.port';
+import { IFileStoragePort } from '@application/ports/file-storage.port';
 
 export const AUTH_PORT = new InjectionToken<IAuthPort>('AuthPort');
 export const USER_REPOSITORY = new InjectionToken<IUserRepository>('UserRepository');
@@ -14,3 +15,4 @@ export const REVIEW_REPOSITORY = new InjectionToken<IReviewRepository>('ReviewRe
 export const FAVORITE_REPOSITORY = new InjectionToken<IFavoriteRepository>('FavoriteRepository');
 export const GEOLOCATION_PORT = new InjectionToken<IGeolocationPort>('GeolocationPort');
 export const STORAGE_PORT = new InjectionToken<IStoragePort>('StoragePort');
+export const FILE_STORAGE_PORT = new InjectionToken<IFileStoragePort>('FileStoragePort');

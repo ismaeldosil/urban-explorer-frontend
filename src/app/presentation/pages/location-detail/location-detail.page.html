@@ -1,0 +1,328 @@
+<!-- Loading State -->
+@if (isLoading()) {
+  <div class="loading-state">
+    <div class="skeleton-hero">
+      <ion-skeleton-text [animated]="true"></ion-skeleton-text>
+    </div>
+    <div class="skeleton-content">
+      <ion-skeleton-text [animated]="true" style="width: 70%; height: 28px;"></ion-skeleton-text>
+      <ion-skeleton-text [animated]="true" style="width: 50%; height: 20px; margin-top: 8px;"></ion-skeleton-text>
+      <ion-skeleton-text [animated]="true" style="width: 80%; height: 16px; margin-top: 12px;"></ion-skeleton-text>
+      <div style="display: flex; gap: 8px; margin-top: 16px;">
+        <ion-skeleton-text [animated]="true" style="width: 100px; height: 44px; border-radius: 8px;"></ion-skeleton-text>
+        <ion-skeleton-text [animated]="true" style="width: 100px; height: 44px; border-radius: 8px;"></ion-skeleton-text>
+        <ion-skeleton-text [animated]="true" style="width: 100px; height: 44px; border-radius: 8px;"></ion-skeleton-text>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Error State -->
+@if (error()) {
+  <div class="error-state">
+    <div class="error-illustration">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+    </div>
+    <h3>Error al cargar</h3>
+    <p>{{ error() }}</p>
+    <ion-button (click)="loadLocation()">
+      <ion-icon name="refresh-outline" slot="start"></ion-icon>
+      Reintentar
+    </ion-button>
+  </div>
+}
+
+<!-- Location Content -->
+@if (location() && !isLoading()) {
+  <ion-content [fullscreen]="true">
+    <!-- Hero Image Carousel with Overlay -->
+    <div class="hero-section">
+      <app-image-carousel
+        [images]="locationImages()"
+        [showIndicators]="true"
+      ></app-image-carousel>
+
+      <!-- Overlay navigation -->
+      <div class="hero-overlay">
+        <button class="overlay-btn back-btn" (click)="goBack()">
+          <ion-icon name="arrow-back-outline"></ion-icon>
+        </button>
+        <div class="overlay-actions">
+          <button class="overlay-btn" (click)="toggleFavorite()">
+            <ion-icon
+              [name]="isFavorite() ? 'heart' : 'heart-outline'"
+              [class.favorite]="isFavorite()"
+            ></ion-icon>
+          </button>
+          <button class="overlay-btn" (click)="shareLocation()">
+            <ion-icon name="share-outline"></ion-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Image counter -->
+      @if (locationImages().length > 1) {
+        <div class="image-counter">
+          <ion-icon name="images-outline"></ion-icon>
+          <span>{{ currentImageIndex() + 1 }}/{{ locationImages().length }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-wrapper">
+      <!-- Location Header -->
+      <section class="location-header">
+        <h1 class="location-name">{{ location()!.name }}</h1>
+
+        <div class="rating-row">
+          <app-star-rating [rating]="location()!.rating" [readonly]="true" size="medium"></app-star-rating>
+          <span class="rating-value">{{ location()!.rating.toFixed(1) }}</span>
+          <span class="review-count">({{ reviewsCount() }} reviews)</span>
+          @if (priceLevel()) {
+            <span class="price-level">· {{ getPriceLevelDisplay() }}</span>
+          }
+        </div>
+
+        <div class="address-row">
+          <ion-icon name="location-outline"></ion-icon>
+          <span>{{ location()!.address }}, {{ location()!.city }}</span>
+        </div>
+      </section>
+
+      <!-- Action Buttons Row -->
+      <section class="action-buttons">
+        <button class="action-btn" (click)="openDirections()">
+          <div class="action-icon">
+            <ion-icon name="navigate-outline"></ion-icon>
+          </div>
+          <span>Navegar</span>
+        </button>
+
+        @if (location()!.phone) {
+          <button class="action-btn" (click)="callLocation()">
+            <div class="action-icon">
+              <ion-icon name="call-outline"></ion-icon>
+            </div>
+            <span>Llamar</span>
+          </button>
+        }
+
+        @if (location()!.website) {
+          <button class="action-btn" (click)="openWebsite()">
+            <div class="action-icon">
+              <ion-icon name="globe-outline"></ion-icon>
+            </div>
+            <span>Web</span>
+          </button>
+        }
+
+        <button class="action-btn" (click)="shareLocation()">
+          <div class="action-icon">
+            <ion-icon name="share-social-outline"></ion-icon>
+          </div>
+          <span>Compartir</span>
+        </button>
+      </section>
+
+      <!-- Info Card -->
+      <section class="info-card">
+        <h2 class="section-title">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          Información
+        </h2>
+
+        <div class="info-list">
+          <!-- Opening Hours -->
+          <div class="info-item" (click)="toggleHoursExpanded()">
+            <ion-icon name="time-outline" class="info-icon"></ion-icon>
+            <div class="info-content">
+              @if (isOpen()) {
+                <span class="status open">Abierto</span>
+                <span class="status-detail">· Cierra a las {{ closingTime() }}</span>
+              } @else {
+                <span class="status closed">Cerrado</span>
+                <span class="status-detail">· Abre a las {{ openingTime() }}</span>
+              }
+            </div>
+            <ion-icon
+              [name]="hoursExpanded() ? 'chevron-up-outline' : 'chevron-down-outline'"
+              class="expand-icon"
+            ></ion-icon>
+          </div>
+
+          @if (hoursExpanded()) {
+            <div class="hours-detail">
+              @for (day of weekDays; track day.name) {
+                <div class="hours-row" [class.today]="day.isToday">
+                  <span class="day-name">{{ day.name }}</span>
+                  <span class="day-hours">{{ day.hours }}</span>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Distance -->
+          @if (distance()) {
+            <div class="info-item">
+              <ion-icon name="location-outline" class="info-icon"></ion-icon>
+              <div class="info-content">
+                <span>A {{ distance() }} de tu ubicación</span>
+              </div>
+            </div>
+          }
+
+          <!-- Price Range -->
+          @if (priceLevel()) {
+            <div class="info-item">
+              <ion-icon name="cash-outline" class="info-icon"></ion-icon>
+              <div class="info-content">
+                <span>Rango de precios: {{ getPriceLevelDisplay() }}</span>
+              </div>
+            </div>
+          }
+
+          <!-- Category/Tags -->
+          <div class="info-item">
+            <ion-icon name="pricetag-outline" class="info-icon"></ion-icon>
+            <div class="info-content tags">
+              <ion-chip size="small" color="primary">{{ location()!.category }}</ion-chip>
+              @for (tag of location()!.tags || []; track tag) {
+                <ion-chip size="small">{{ tag }}</ion-chip>
+              }
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Description -->
+      @if (location()!.description) {
+        <section class="description-section">
+          <h2 class="section-title">
+            <ion-icon name="document-text-outline"></ion-icon>
+            Descripción
+          </h2>
+          <p class="description-text" [class.expanded]="descriptionExpanded()">
+            {{ location()!.description }}
+          </p>
+          @if (isDescriptionLong()) {
+            <button class="read-more-btn" (click)="toggleDescription()">
+              {{ descriptionExpanded() ? 'Leer menos' : 'Leer más' }}
+            </button>
+          }
+        </section>
+      }
+
+      <!-- Features/Amenities -->
+      @if (features().length > 0) {
+        <section class="features-section">
+          <h2 class="section-title">
+            <ion-icon name="sparkles-outline"></ion-icon>
+            Características
+          </h2>
+          <div class="features-grid">
+            @for (feature of features(); track feature.id) {
+              <div class="feature-chip">
+                <ion-icon [name]="feature.icon"></ion-icon>
+                <span>{{ feature.name }}</span>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- Reviews Section -->
+      <section class="reviews-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <ion-icon name="chatbubbles-outline"></ion-icon>
+            Reviews ({{ reviewsCount() }})
+          </h2>
+          @if (reviews().length > 0) {
+            <button class="view-all-btn" (click)="viewAllReviews()">
+              Ver más
+              <ion-icon name="chevron-forward-outline"></ion-icon>
+            </button>
+          }
+        </div>
+
+        @if (isLoadingReviews()) {
+          <div class="reviews-loading">
+            <ion-spinner name="crescent" color="primary"></ion-spinner>
+          </div>
+        } @else if (reviews().length === 0) {
+          <div class="no-reviews">
+            <ion-icon name="chatbubble-outline"></ion-icon>
+            <p>Sé el primero en opinar</p>
+            <ion-button fill="outline" size="small" (click)="writeReview()">
+              Escribir review
+            </ion-button>
+          </div>
+        } @else {
+          <div class="reviews-list">
+            @for (review of reviews().slice(0, 2); track review.id) {
+              <div class="review-card">
+                <div class="review-header">
+                  <div class="reviewer-avatar">
+                    @if (review.userAvatar) {
+                      <img [src]="review.userAvatar" [alt]="review.userName" />
+                    } @else {
+                      <ion-icon name="person"></ion-icon>
+                    }
+                  </div>
+                  <div class="reviewer-info">
+                    <span class="reviewer-name">{{ review.userName }}</span>
+                    <div class="review-meta">
+                      <app-star-rating [rating]="review.rating" [readonly]="true" size="small"></app-star-rating>
+                      <span class="review-date">· {{ formatDate(review.date) }}</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="review-text">{{ review.comment }}</p>
+                @if (review.photos && review.photos.length > 0) {
+                  <div class="review-photos">
+                    @for (photo of review.photos.slice(0, 3); track photo) {
+                      <img [src]="photo" class="review-photo" />
+                    }
+                    @if (review.photos.length > 3) {
+                      <div class="more-photos">+{{ review.photos.length - 3 }}</div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- Mini Map -->
+      <section class="map-section">
+        <h2 class="section-title">
+          <ion-icon name="map-outline"></ion-icon>
+          Ubicación
+        </h2>
+        <div class="mini-map-container" (click)="openInMaps()">
+          <div #miniMapContainer class="mini-map"></div>
+          <div class="map-overlay">
+            <ion-button fill="clear" size="small">
+              Abrir en Maps
+              <ion-icon name="open-outline" slot="end"></ion-icon>
+            </ion-button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bottom spacing for FAB -->
+      <div class="bottom-spacer"></div>
+    </div>
+
+    <!-- Write Review FAB -->
+    @if (isAuthenticated()) {
+      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+        <ion-fab-button (click)="writeReview()">
+          <ion-icon name="create-outline"></ion-icon>
+        </ion-fab-button>
+      </ion-fab>
+    }
+  </ion-content>
+}

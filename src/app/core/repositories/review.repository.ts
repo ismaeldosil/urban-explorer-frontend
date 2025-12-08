@@ -17,10 +17,23 @@ export interface UpdateReviewInput {
   tags?: string[];
 }
 
+export interface PaginatedResult<T> {
+  data: T[];
+  totalCount: number;
+  hasMore: boolean;
+}
+
+export interface GetReviewsOptions {
+  limit?: number;
+  offset?: number;
+  sortBy?: 'date' | 'rating';
+  sortOrder?: 'asc' | 'desc';
+}
+
 export interface IReviewRepository {
-  getByLocationId(locationId: string): Promise<Result<ReviewEntity[]>>;
+  getByLocationId(locationId: string, options?: GetReviewsOptions): Promise<Result<PaginatedResult<ReviewEntity>>>;
   getById(id: string): Promise<Result<ReviewEntity | null>>;
-  getByUserId(userId: string, limit?: number): Promise<Result<ReviewEntity[]>>;
+  getByUserId(userId: string, options?: GetReviewsOptions): Promise<Result<PaginatedResult<ReviewEntity>>>;
   create(review: CreateReviewInput): Promise<Result<ReviewEntity>>;
   update(id: string, review: UpdateReviewInput): Promise<Result<ReviewEntity>>;
   delete(id: string): Promise<Result<void>>;

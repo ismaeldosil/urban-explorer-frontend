@@ -1,329 +1,154 @@
-import { Component, inject, signal, computed, OnInit, OnDestroy, ChangeDetectionStrategy, ViewChild, AfterViewInit } from '@angular/core';
+import {
+  Component,
+  inject,
+  signal,
+  computed,
+  OnInit,
+  OnDestroy,
+  ChangeDetectionStrategy,
+  ViewChild,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, ModalController } from '@ionic/angular';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
+
 import { SearchInputComponent } from '../../../components/search-input/search-input.component';
 import { LocationCardComponent, LocationCardData } from '../../../components/location-card/location-card.component';
 import { SearchLocationsUseCase } from '@application/use-cases/locations';
 import { LocationEntity } from '@core/entities/location.entity';
 
-/** UI state machine for search page */
-type SearchState = 'idle' | 'loading' | 'results' | 'empty' | 'error';
+/** UI state for search page */
+type SearchState = 'initial' | 'typing' | 'loading' | 'results' | 'empty' | 'error';
 
 /** Search history storage key */
 const SEARCH_HISTORY_KEY = 'urban_explorer_search_history';
-const MAX_HISTORY_ITEMS = 10;
+const MAX_HISTORY_ITEMS = 5;
 
 /** Category filter option */
 interface CategoryFilter {
   id: string;
   name: string;
   icon: string;
+  color: string;
+}
+
+/** Popular location near user */
+interface PopularLocation {
+  id: string;
+  name: string;
+  rating: number;
+  distance: string;
+}
+
+/** Search suggestion */
+interface SearchSuggestion {
+  id: string;
+  type: 'location' | 'search';
+  text: string;
+  rating?: number;
+  distance?: string;
+  highlightStart?: number;
+  highlightEnd?: number;
 }
 
 @Component({
   selector: 'app-search',
   standalone: true,
   imports: [CommonModule, IonicModule, SearchInputComponent, LocationCardComponent],
-  template: `
-    <ion-header class="ion-no-border">
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-back-button defaultHref="/tabs/explore"></ion-back-button>
-        </ion-buttons>
-        <app-search-input
-          #searchInput
-          placeholder="Buscar lugares..."
-          [loading]="state() === 'loading'"
-          [value]="query()"
-          (searchChange)="onSearch($event)"
-          (searchSubmit)="onSearchSubmit($event)"
-        ></app-search-input>
-      </ion-toolbar>
-
-      <!-- Category Filters -->
-      <ion-toolbar *ngIf="showFilters()" class="filter-toolbar">
-        <ion-segment
-          [value]="selectedCategory()"
-          (ionChange)="onCategoryChange($event)"
-          scrollable
-        >
-          <ion-segment-button value="">
-            <ion-label>Todos</ion-label>
-          </ion-segment-button>
-          <ion-segment-button *ngFor="let cat of categories" [value]="cat.id">
-            <ion-icon [name]="cat.icon"></ion-icon>
-            <ion-label>{{ cat.name }}</ion-label>
-          </ion-segment-button>
-        </ion-segment>
-      </ion-toolbar>
-    </ion-header>
-
-    <ion-content>
-      <!-- Recent Searches (idle state) -->
-      <div *ngIf="state() === 'idle'" class="section">
-        <div *ngIf="recentSearches().length > 0">
-          <div class="section-header">
-            <h3 class="section-title">Busquedas recientes</h3>
-            <ion-button fill="clear" size="small" (click)="clearHistory()">
-              Limpiar
-            </ion-button>
-          </div>
-          <ion-list lines="none" class="recent-list">
-            <ion-item
-              *ngFor="let search of recentSearches()"
-              button
-              (click)="onRecentClick(search)"
-            >
-              <ion-icon name="time-outline" slot="start" color="medium"></ion-icon>
-              <ion-label>{{ search }}</ion-label>
-              <ion-button
-                fill="clear"
-                slot="end"
-                (click)="removeRecent(search, $event)"
-              >
-                <ion-icon name="close-outline" color="medium"></ion-icon>
-              </ion-button>
-            </ion-item>
-          </ion-list>
-        </div>
-
-        <!-- Popular Categories -->
-        <div class="popular-section">
-          <h3 class="section-title">Categorias populares</h3>
-          <div class="category-grid">
-            <ion-card
-              *ngFor="let cat of categories"
-              button
-              (click)="onCategoryClick(cat)"
-              class="category-card"
-            >
-              <ion-icon [name]="cat.icon" color="primary"></ion-icon>
-              <span>{{ cat.name }}</span>
-            </ion-card>
-          </div>
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <div *ngIf="state() === 'loading'" class="section">
-        <app-location-card
-          *ngFor="let _ of [1,2,3]"
-          [skeleton]="true"
-        ></app-location-card>
-      </div>
-
-      <!-- Results State -->
-      <div *ngIf="state() === 'results'" class="section">
-        <p class="results-count">{{ resultsCount() }} resultados</p>
-        <app-location-card
-          *ngFor="let location of results(); trackBy: trackByLocationId"
-          [location]="location"
-          [showFavorite]="true"
-          (cardClick)="onLocationClick($event)"
-          (favoriteClick)="onFavoriteClick($event)"
-        ></app-location-card>
-      </div>
-
-      <!-- Empty State -->
-      <div *ngIf="state() === 'empty'" class="empty-state">
-        <ion-icon name="search-outline"></ion-icon>
-        <h3>Sin resultados</h3>
-        <p>No encontramos lugares para "{{ query() }}"</p>
-        <ion-button fill="outline" (click)="clearSearch()">
-          Nueva busqueda
-        </ion-button>
-      </div>
-
-      <!-- Error State -->
-      <div *ngIf="state() === 'error'" class="error-state">
-        <ion-icon name="cloud-offline-outline" color="danger"></ion-icon>
-        <h3>Error de conexion</h3>
-        <p>{{ errorMessage() }}</p>
-        <ion-button (click)="retrySearch()">
-          <ion-icon name="refresh-outline" slot="start"></ion-icon>
-          Reintentar
-        </ion-button>
-      </div>
-    </ion-content>
-  `,
-  styles: [`
-    ion-toolbar {
-      --padding-start: 0;
-      --padding-end: 16px;
-    }
-    app-search-input {
-      flex: 1;
-    }
-    .filter-toolbar {
-      --padding-start: 8px;
-      --padding-end: 8px;
-    }
-    .filter-toolbar ion-segment {
-      --background: transparent;
-    }
-    .filter-toolbar ion-segment-button {
-      --indicator-height: 3px;
-      min-width: auto;
-      font-size: 13px;
-    }
-    .filter-toolbar ion-segment-button ion-icon {
-      font-size: 18px;
-      margin-right: 4px;
-    }
-    .section {
-      padding: 16px;
-    }
-    .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    .section-title {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--ion-color-medium);
-      text-transform: uppercase;
-      margin: 0 0 12px 4px;
-    }
-    .section-header .section-title {
-      margin-bottom: 0;
-    }
-    .recent-list {
-      background: transparent;
-    }
-    .recent-list ion-item {
-      --background: transparent;
-      --padding-start: 4px;
-    }
-    .results-count {
-      font-size: 14px;
-      color: var(--ion-color-medium);
-      margin: 0 0 12px 4px;
-    }
-
-    /* Popular Categories */
-    .popular-section {
-      margin-top: 24px;
-    }
-    .category-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-    }
-    .category-card {
-      margin: 0;
-      padding: 16px 8px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      border-radius: 12px;
-    }
-    .category-card ion-icon {
-      font-size: 28px;
-    }
-    .category-card span {
-      font-size: 12px;
-      font-weight: 500;
-      text-align: center;
-    }
-
-    /* Empty State */
-    .empty-state, .error-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 64px 32px;
-      text-align: center;
-      color: var(--ion-color-medium);
-    }
-    .empty-state ion-icon, .error-state ion-icon {
-      font-size: 64px;
-      margin-bottom: 16px;
-      opacity: 0.6;
-    }
-    .empty-state h3, .error-state h3 {
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--ion-text-color);
-      margin: 0 0 8px 0;
-    }
-    .empty-state p, .error-state p {
-      font-size: 14px;
-      margin: 0 0 24px 0;
-    }
-  `],
+  templateUrl: './search.page.html',
+  styleUrls: ['./search.page.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SearchPage implements OnInit, OnDestroy {
   @ViewChild('searchInput') searchInputRef!: SearchInputComponent;
 
   private readonly router = inject(Router);
+  private readonly modalController = inject(ModalController);
   private readonly searchUseCase = inject(SearchLocationsUseCase);
+
+  private readonly destroy$ = new Subject<void>();
+  private readonly searchQuery$ = new Subject<string>();
 
   // State signals
   readonly query = signal('');
   readonly results = signal<LocationCardData[]>([]);
-  readonly state = signal<SearchState>('idle');
+  readonly suggestions = signal<SearchSuggestion[]>([]);
+  readonly state = signal<SearchState>('initial');
   readonly errorMessage = signal('');
   readonly selectedCategory = signal('');
   readonly recentSearches = signal<string[]>([]);
+  readonly popularNearby = signal<PopularLocation[]>([
+    { id: '1', name: 'Mercado Central', rating: 4.7, distance: '0.5 km' },
+    { id: '2', name: 'Parque de las Esculturas', rating: 4.8, distance: '1.2 km' },
+    { id: '3', name: 'Librería Antigua', rating: 4.5, distance: '0.8 km' },
+  ]);
 
   // Computed signals
   readonly resultsCount = computed(() => this.results().length);
-  readonly showFilters = computed(() =>
-    this.state() === 'results' || this.state() === 'loading'
-  );
+  readonly suggestionsCount = computed(() => this.suggestions().length);
+  readonly totalSuggestionsCount = computed(() => this.results().length);
+  readonly showViewAll = computed(() => this.results().length > 5);
 
-  // Category filters
+  // Category filters (4x2 grid = 8 categories)
   readonly categories: CategoryFilter[] = [
-    { id: 'restaurants', name: 'Restaurantes', icon: 'restaurant-outline' },
-    { id: 'cafes', name: 'Cafeterias', icon: 'cafe-outline' },
-    { id: 'bars', name: 'Bares', icon: 'beer-outline' },
-    { id: 'museums', name: 'Museos', icon: 'business-outline' },
-    { id: 'parks', name: 'Parques', icon: 'leaf-outline' },
-    { id: 'shops', name: 'Tiendas', icon: 'storefront-outline' },
+    { id: 'restaurants', name: 'Comida', icon: 'restaurant', color: '#ff6b35' },
+    { id: 'museums', name: 'Arte', icon: 'color-palette', color: '#9c27b0' },
+    { id: 'history', name: 'Historia', icon: 'library', color: '#795548' },
+    { id: 'parks', name: 'Parques', icon: 'leaf', color: '#28a745' },
+    { id: 'bars', name: 'Bares', icon: 'wine', color: '#e91e63' },
+    { id: 'views', name: 'Miradores', icon: 'telescope', color: '#00bcd4' },
+    { id: 'shops', name: 'Tiendas', icon: 'storefront', color: '#3880ff' },
+    { id: 'cafes', name: 'Cafés', icon: 'cafe', color: '#8b4513' },
   ];
-
-  private searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit(): void {
     this.loadSearchHistory();
+    this.setupSearchDebounce();
   }
 
-  /** Ionic lifecycle hook - called when page transition completes */
   ionViewDidEnter(): void {
-    // Focus the search input after page animation completes
     setTimeout(() => this.searchInputRef?.focusInput(), 100);
   }
 
   ngOnDestroy(): void {
-    if (this.searchTimeout) {
-      clearTimeout(this.searchTimeout);
-    }
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  /**
-   * Handle search input changes
-   */
+  private setupSearchDebounce(): void {
+    this.searchQuery$.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(query => {
+      if (query.length >= 2) {
+        this.performSearch(query);
+      }
+    });
+  }
+
   onSearch(query: string): void {
     this.query.set(query);
 
-    if (query.length < 2) {
-      this.state.set('idle');
+    if (query.length === 0) {
+      this.state.set('initial');
       this.results.set([]);
+      this.suggestions.set([]);
       return;
     }
 
-    this.performSearch(query);
+    if (query.length >= 1) {
+      this.state.set('typing');
+      this.generateSuggestions(query);
+    }
+
+    if (query.length >= 2) {
+      this.searchQuery$.next(query);
+    }
   }
 
-  /**
-   * Handle search submit (enter key)
-   */
   onSearchSubmit(query: string): void {
     if (query.length >= 2) {
       this.addToHistory(query);
@@ -331,9 +156,44 @@ export class SearchPage implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Perform search using the use case
-   */
+  onClear(): void {
+    this.query.set('');
+    this.state.set('initial');
+    this.results.set([]);
+    this.suggestions.set([]);
+  }
+
+  private generateSuggestions(query: string): void {
+    const lowerQuery = query.toLowerCase();
+
+    // Generate suggestions from categories and recent searches
+    const suggestions: SearchSuggestion[] = [];
+
+    // Add search term as first suggestion
+    suggestions.push({
+      id: 'search-' + query,
+      type: 'search',
+      text: query,
+    });
+
+    // Add matching recent searches
+    this.recentSearches()
+      .filter(s => s.toLowerCase().includes(lowerQuery))
+      .slice(0, 3)
+      .forEach(s => {
+        const start = s.toLowerCase().indexOf(lowerQuery);
+        suggestions.push({
+          id: 'recent-' + s,
+          type: 'search',
+          text: s,
+          highlightStart: start,
+          highlightEnd: start + query.length,
+        });
+      });
+
+    this.suggestions.set(suggestions);
+  }
+
   async performSearch(query: string): Promise<void> {
     this.state.set('loading');
     this.errorMessage.set('');
@@ -350,9 +210,19 @@ export class SearchPage implements OnInit, OnDestroy {
       if (result.success) {
         const locations = this.mapEntitiesToCardData(result.data);
         this.results.set(locations);
-        this.state.set(locations.length > 0 ? 'results' : 'empty');
 
-        // Add to history on successful search with results
+        // Generate suggestions from results
+        const searchSuggestions = locations.slice(0, 5).map((loc): SearchSuggestion => ({
+          id: loc.id,
+          type: 'location',
+          text: loc.name,
+          rating: loc.rating,
+          distance: loc.distance ? `${loc.distance} km` : undefined,
+        }));
+
+        this.suggestions.set(searchSuggestions);
+        this.state.set(locations.length > 0 ? 'typing' : 'empty');
+
         if (locations.length > 0) {
           this.addToHistory(query);
         }
@@ -367,38 +237,34 @@ export class SearchPage implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Handle category filter change
-   */
-  onCategoryChange(event: CustomEvent): void {
-    const categoryId = event.detail.value ?? '';
-    this.selectedCategory.set(categoryId);
-
-    if (this.query().length >= 2) {
-      this.performSearch(this.query());
+  onSuggestionClick(suggestion: SearchSuggestion): void {
+    if (suggestion.type === 'location') {
+      this.router.navigate(['/location', suggestion.id]);
+    } else {
+      this.query.set(suggestion.text);
+      this.performSearch(suggestion.text);
     }
   }
 
-  /**
-   * Handle category card click from popular categories
-   */
-  onCategoryClick(category: CategoryFilter): void {
-    this.selectedCategory.set(category.id);
-    this.query.set(category.name);
-    this.performSearch(category.name);
+  onViewAllResults(): void {
+    this.state.set('results');
   }
 
-  /**
-   * Handle recent search click
-   */
+  onCategoryClick(category: CategoryFilter): void {
+    this.router.navigate(['/locations'], {
+      queryParams: { category: category.id }
+    });
+  }
+
   onRecentClick(search: string): void {
     this.query.set(search);
     this.performSearch(search);
   }
 
-  /**
-   * Remove item from search history
-   */
+  onPopularClick(location: PopularLocation): void {
+    this.router.navigate(['/location', location.id]);
+  }
+
   removeRecent(search: string, event: Event): void {
     event.stopPropagation();
     this.recentSearches.update(searches =>
@@ -407,92 +273,80 @@ export class SearchPage implements OnInit, OnDestroy {
     this.saveSearchHistory();
   }
 
-  /**
-   * Clear all search history
-   */
   clearHistory(): void {
     this.recentSearches.set([]);
     this.saveSearchHistory();
   }
 
-  /**
-   * Clear current search
-   */
   clearSearch(): void {
     this.query.set('');
     this.results.set([]);
-    this.state.set('idle');
+    this.state.set('initial');
     this.selectedCategory.set('');
   }
 
-  /**
-   * Retry failed search
-   */
   retrySearch(): void {
     if (this.query().length >= 2) {
       this.performSearch(this.query());
     }
   }
 
-  /**
-   * Handle location card click
-   */
-  onLocationClick(location: LocationCardData): void {
-    this.router.navigate(['/tabs/explore/location', location.id]);
+  async openFilters(): Promise<void> {
+    // TODO: Implement filter modal
+    console.log('Open filters modal');
   }
 
-  /**
-   * Handle favorite toggle
-   */
+  onLocationClick(location: LocationCardData): void {
+    this.router.navigate(['/location', location.id]);
+  }
+
   onFavoriteClick(event: { location: LocationCardData; isFavorite: boolean }): void {
-    // TODO: Implement favorite toggle with ToggleFavoriteUseCase
     console.log('Toggle favorite:', event);
   }
 
-  /**
-   * Track by function for location cards
-   */
   trackByLocationId(index: number, location: LocationCardData): string {
     return location.id;
   }
 
-  // ========== Private Methods ==========
-
-  /**
-   * Map LocationEntity array to LocationCardData array
-   */
-  private mapEntitiesToCardData(entities: LocationEntity[]): LocationCardData[] {
-    return entities.map(entity => this.mapEntityToCardData(entity));
+  trackBySuggestionId(index: number, suggestion: SearchSuggestion): string {
+    return suggestion.id;
   }
 
-  /**
-   * Map single LocationEntity to LocationCardData
-   */
-  private mapEntityToCardData(entity: LocationEntity): LocationCardData {
+  getHighlightedText(text: string, start?: number, end?: number): { before: string; highlight: string; after: string } {
+    if (start === undefined || end === undefined) {
+      return { before: text, highlight: '', after: '' };
+    }
     return {
+      before: text.substring(0, start),
+      highlight: text.substring(start, end),
+      after: text.substring(end),
+    };
+  }
+
+  formatRating(rating: number): string {
+    return rating.toFixed(1);
+  }
+
+  // Private methods
+  private mapEntitiesToCardData(entities: LocationEntity[]): LocationCardData[] {
+    return entities.map(entity => ({
       id: entity.id,
       name: entity.name,
       imageUrl: entity.imageUrl ?? undefined,
       rating: entity.rating,
-      reviewCount: 0, // Would need to fetch from reviews
-      priceLevel: 2, // Default price level
-      distance: undefined, // Would need user location to calculate
+      reviewCount: entity.reviewCount || 0,
+      priceLevel: 2,
+      distance: undefined,
       category: this.getCategoryName(entity.category),
-      isOpen: true // Default to open, would need opening hours to determine
-    };
+      isOpen: true
+    }));
   }
 
-  /**
-   * Get human-readable category name
-   */
   private getCategoryName(categoryId: string): string {
     const category = this.categories.find(c => c.id === categoryId);
     return category?.name ?? categoryId;
   }
 
-  /**
-   * Load search history from localStorage
-   */
   private loadSearchHistory(): void {
     try {
       const stored = localStorage.getItem(SEARCH_HISTORY_KEY);
@@ -501,14 +355,10 @@ export class SearchPage implements OnInit, OnDestroy {
         this.recentSearches.set(history.slice(0, MAX_HISTORY_ITEMS));
       }
     } catch {
-      // Ignore parsing errors, start with empty history
       this.recentSearches.set([]);
     }
   }
 
-  /**
-   * Save search history to localStorage
-   */
   private saveSearchHistory(): void {
     try {
       localStorage.setItem(
@@ -520,15 +370,11 @@ export class SearchPage implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Add search term to history
-   */
   private addToHistory(query: string): void {
     const trimmed = query.trim();
     if (!trimmed) return;
 
     this.recentSearches.update(searches => {
-      // Remove if exists and add to beginning
       const filtered = searches.filter(
         s => s.toLowerCase() !== trimmed.toLowerCase()
       );

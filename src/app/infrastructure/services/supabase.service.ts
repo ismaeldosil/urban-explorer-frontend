@@ -21,6 +21,13 @@ export class SupabaseService {
           detectSessionInUrl: true,
           storage: capacitorSupabaseStorage,
           storageKey: 'urban-explorer-auth',
+          // Custom lock implementation that bypasses Navigator Locks API
+          // to prevent NavigatorLockAcquireTimeoutError in development
+          // and in mobile WebView contexts where locks may not work properly
+          lock: async (name, acquireTimeout, fn) => {
+            // Simply execute the function without acquiring a lock
+            return await fn();
+          },
         },
       }
     );

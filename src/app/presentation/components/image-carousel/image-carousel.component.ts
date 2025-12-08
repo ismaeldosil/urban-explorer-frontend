@@ -16,7 +16,7 @@ register();
       @if (images && images.length > 0) {
         <swiper-container
           #swiperRef
-          [pagination]="true"
+          [pagination]="showIndicators"
           [zoom]="true"
           class="image-swiper"
         >
@@ -133,6 +133,7 @@ register();
 })
 export class ImageCarouselComponent implements AfterViewInit {
   @Input() images: string[] = [];
+  @Input() showIndicators = true;
   @ViewChild('swiperRef', { static: false }) swiperRef: any;
 
   protected currentIndex = 0;
