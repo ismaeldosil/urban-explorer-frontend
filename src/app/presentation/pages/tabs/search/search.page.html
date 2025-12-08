@@ -1,0 +1,239 @@
+<ion-header class="ion-no-border search-header">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/explore" text=""></ion-back-button>
+    </ion-buttons>
+    <app-search-input
+      #searchInput
+      placeholder="Buscar lugares..."
+      [loading]="state() === 'loading'"
+      [value]="query()"
+      (searchChange)="onSearch($event)"
+      (searchSubmit)="onSearchSubmit($event)"
+      (clear)="onClear()"
+    ></app-search-input>
+    @if (query().length > 0) {
+      <ion-buttons slot="end">
+        <ion-button fill="clear" (click)="onClear()">
+          <ion-icon name="close-circle" color="medium"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    }
+  </ion-toolbar>
+
+  <!-- Filter toolbar (shows in results/loading state) -->
+  @if (state() === 'results' || (state() === 'loading' && query().length > 0)) {
+    <ion-toolbar class="filter-toolbar">
+      <ion-button fill="outline" size="small" class="filter-btn" (click)="openFilters()">
+        <ion-icon name="options-outline" slot="start"></ion-icon>
+        Filtros
+      </ion-button>
+      <ion-select
+        interface="action-sheet"
+        placeholder="Ordenar: Relevancia"
+        class="sort-select"
+      >
+        <ion-select-option value="relevance">Relevancia</ion-select-option>
+        <ion-select-option value="distance">Cercanía</ion-select-option>
+        <ion-select-option value="rating">Rating</ion-select-option>
+        <ion-select-option value="price_asc">Precio: menor a mayor</ion-select-option>
+        <ion-select-option value="price_desc">Precio: mayor a menor</ion-select-option>
+      </ion-select>
+    </ion-toolbar>
+  }
+</ion-header>
+
+<ion-content>
+  <!-- ============================================ -->
+  <!-- INITIAL STATE: Recent + Popular + Categories -->
+  <!-- ============================================ -->
+  @if (state() === 'initial') {
+    <div class="initial-state">
+      <!-- Recent searches -->
+      @if (recentSearches().length > 0) {
+        <section class="section">
+          <div class="section-header">
+            <div class="section-title">
+              <ion-icon name="time-outline"></ion-icon>
+              <span>BÚSQUEDAS RECIENTES</span>
+            </div>
+            <ion-button fill="clear" size="small" (click)="clearHistory()">
+              Limpiar
+            </ion-button>
+          </div>
+          <ion-list lines="none" class="recent-list">
+            @for (search of recentSearches(); track search) {
+              <ion-item-sliding>
+                <ion-item button (click)="onRecentClick(search)">
+                  <ion-icon name="time-outline" slot="start" color="medium"></ion-icon>
+                  <ion-label>{{ search }}</ion-label>
+                </ion-item>
+                <ion-item-options side="end">
+                  <ion-item-option color="danger" (click)="removeRecent(search, $event)">
+                    <ion-icon name="trash-outline"></ion-icon>
+                  </ion-item-option>
+                </ion-item-options>
+              </ion-item-sliding>
+            }
+          </ion-list>
+        </section>
+      }
+
+      <!-- Popular nearby -->
+      <section class="section">
+        <div class="section-header">
+          <div class="section-title">
+            <ion-icon name="flame-outline"></ion-icon>
+            <span>POPULARES CERCA DE TI</span>
+          </div>
+        </div>
+        <ion-list lines="none" class="popular-list">
+          @for (location of popularNearby(); track location.id) {
+            <ion-item button (click)="onPopularClick(location)">
+              <ion-icon name="location-outline" slot="start" color="primary"></ion-icon>
+              <ion-label>
+                <h3>{{ location.name }}</h3>
+                <p>
+                  <ion-icon name="star" color="warning"></ion-icon>
+                  {{ formatRating(location.rating) }} · {{ location.distance }}
+                </p>
+              </ion-label>
+            </ion-item>
+          }
+        </ion-list>
+      </section>
+
+      <!-- Categories grid -->
+      <section class="section">
+        <div class="section-header">
+          <div class="section-title">
+            <ion-icon name="grid-outline"></ion-icon>
+            <span>CATEGORÍAS</span>
+          </div>
+        </div>
+        <div class="category-grid">
+          @for (cat of categories; track cat.id) {
+            <button class="category-card" (click)="onCategoryClick(cat)">
+              <div class="category-icon" [style.background-color]="cat.color + '20'">
+                <ion-icon [name]="cat.icon" [style.color]="cat.color"></ion-icon>
+              </div>
+              <span class="category-name">{{ cat.name }}</span>
+            </button>
+          }
+        </div>
+      </section>
+    </div>
+  }
+
+  <!-- ============================================ -->
+  <!-- TYPING STATE: Suggestions list -->
+  <!-- ============================================ -->
+  @if (state() === 'typing' || state() === 'loading') {
+    <div class="typing-state">
+      @if (state() === 'loading') {
+        <div class="loading-indicator">
+          <ion-spinner name="dots" color="primary"></ion-spinner>
+        </div>
+      }
+
+      <section class="section">
+        <div class="section-header">
+          <div class="section-title">
+            <ion-icon name="search-outline"></ion-icon>
+            <span>SUGERENCIAS</span>
+          </div>
+        </div>
+        <ion-list lines="none" class="suggestions-list">
+          @for (suggestion of suggestions(); track suggestion.id) {
+            <ion-item button (click)="onSuggestionClick(suggestion)">
+              @if (suggestion.type === 'search') {
+                <ion-icon name="search-outline" slot="start" color="medium"></ion-icon>
+              } @else {
+                <ion-icon name="location-outline" slot="start" color="primary"></ion-icon>
+              }
+              <ion-label>
+                <h3 class="suggestion-text">
+                  @if (suggestion.highlightStart !== undefined) {
+                    {{ getHighlightedText(suggestion.text, suggestion.highlightStart, suggestion.highlightEnd).before }}<strong class="highlight">{{ getHighlightedText(suggestion.text, suggestion.highlightStart, suggestion.highlightEnd).highlight }}</strong>{{ getHighlightedText(suggestion.text, suggestion.highlightStart, suggestion.highlightEnd).after }}
+                  } @else {
+                    {{ suggestion.text }}
+                  }
+                </h3>
+                @if (suggestion.type === 'location' && (suggestion.rating || suggestion.distance)) {
+                  <p class="suggestion-meta">
+                    @if (suggestion.rating) {
+                      <ion-icon name="star" color="warning"></ion-icon>
+                      {{ formatRating(suggestion.rating) }}
+                    }
+                    @if (suggestion.distance) {
+                      · {{ suggestion.distance }}
+                    }
+                  </p>
+                }
+              </ion-label>
+              <ion-icon name="arrow-forward-outline" slot="end" color="medium" class="arrow-icon"></ion-icon>
+            </ion-item>
+          }
+        </ion-list>
+
+        @if (showViewAll()) {
+          <button class="view-all-btn" (click)="onViewAllResults()">
+            Ver todos ({{ totalSuggestionsCount() }})
+            <ion-icon name="arrow-forward-outline"></ion-icon>
+          </button>
+        }
+      </section>
+    </div>
+  }
+
+  <!-- ============================================ -->
+  <!-- RESULTS STATE: Full results list -->
+  <!-- ============================================ -->
+  @if (state() === 'results') {
+    <div class="results-state">
+      <p class="results-count">{{ resultsCount() }} resultados para "{{ query() }}"</p>
+      @for (location of results(); track location.id) {
+        <app-location-card
+          [location]="location"
+          [showFavorite]="true"
+          (cardClick)="onLocationClick($event)"
+          (favoriteClick)="onFavoriteClick($event)"
+        ></app-location-card>
+      }
+    </div>
+  }
+
+  <!-- ============================================ -->
+  <!-- EMPTY STATE -->
+  <!-- ============================================ -->
+  @if (state() === 'empty') {
+    <div class="empty-state">
+      <div class="empty-illustration">
+        <ion-icon name="search-outline"></ion-icon>
+      </div>
+      <h3>Sin resultados</h3>
+      <p>No encontramos lugares para "{{ query() }}"</p>
+      <p class="empty-hint">Intenta con otros términos o explora las categorías</p>
+      <ion-button fill="outline" (click)="clearSearch()">
+        Nueva búsqueda
+      </ion-button>
+    </div>
+  }
+
+  <!-- ============================================ -->
+  <!-- ERROR STATE -->
+  <!-- ============================================ -->
+  @if (state() === 'error') {
+    <div class="error-state">
+      <div class="error-illustration">
+        <ion-icon name="cloud-offline-outline"></ion-icon>
+      </div>
+      <h3>Error de conexión</h3>
+      <p>{{ errorMessage() }}</p>
+      <ion-button (click)="retrySearch()">
+        <ion-icon name="refresh-outline" slot="start"></ion-icon>
+        Reintentar
+      </ion-button>
+    </div>
+  }
+</ion-content>

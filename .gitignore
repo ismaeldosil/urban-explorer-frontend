@@ -8,12 +8,21 @@ www/
 build/
 .angular/
 
+# Native
+ios/
+android/
+*.xcworkspace
+*.xcodeproj
+
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
+
+# OS
 .DS_Store
+Thumbs.db
 
 # Environment files with secrets
 .env
@@ -31,10 +40,14 @@ npm-debug.log*
 coverage/
 .nyc_output/
 
-# Capacitor
-android/
-ios/
+# Capacitor / Signing keys - NEVER COMMIT
 *.keystore
+*.jks
+*.p12
+*.p8
+keystore-base64.txt
+cert-base64.txt
+*.mobileprovision
 
 # Misc
 .tmp/

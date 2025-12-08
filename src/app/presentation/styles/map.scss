@@ -1,0 +1,318 @@
+@use 'variables' as *;
+
+// =====================================================
+// MAP STYLES - Urban Explorer
+// =====================================================
+
+// Import leaflet.markercluster styles
+@import 'leaflet.markercluster/dist/MarkerCluster.css';
+@import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+
+// =====================================================
+// Marker Cluster Styles
+// =====================================================
+
+.marker-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: $font-weight-bold;
+  color: white;
+  box-shadow: $shadow-md;
+  transition: transform $transition-fast;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  .cluster-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: inherit;
+  }
+}
+
+.marker-cluster-small {
+  background: var(--ion-color-primary);
+  width: 40px;
+  height: 40px;
+  font-size: $font-size-sm;
+
+  .cluster-inner {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+.marker-cluster-medium {
+  background: var(--ion-color-secondary);
+  width: 45px;
+  height: 45px;
+  font-size: $font-size-md;
+
+  .cluster-inner {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+.marker-cluster-large {
+  background: var(--ion-color-tertiary);
+  width: 50px;
+  height: 50px;
+  font-size: $font-size-lg;
+
+  .cluster-inner {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+// =====================================================
+// Location Marker Styles
+// =====================================================
+
+.location-marker {
+  .marker-pin {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform $transition-fast;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3));
+  }
+
+  .marker-head {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--marker-color, var(--ion-color-primary));
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 3px solid white;
+
+    ion-icon {
+      transform: rotate(45deg);
+      font-size: 18px;
+      color: white;
+    }
+  }
+
+  .marker-rating {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 18px;
+    padding: 0 4px;
+    background: white;
+    border-radius: $radius-sm;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+
+    span {
+      font-size: 10px;
+      font-weight: $font-weight-semibold;
+      color: var(--ue-text-primary);
+    }
+  }
+
+  &.selected .marker-pin {
+    transform: scale(1.3);
+    z-index: 1000 !important;
+
+    .marker-head {
+      box-shadow: 0 0 0 4px rgba(var(--ion-color-primary-rgb), 0.3);
+    }
+  }
+
+  // Category-specific colors
+  &.restaurant .marker-head {
+    background: #ff6b35;
+  }
+
+  &.cafe .marker-head {
+    background: #8b4513;
+  }
+
+  &.bar .marker-head {
+    background: #e91e63;
+  }
+
+  &.park .marker-head {
+    background: #28a745;
+  }
+
+  &.museum .marker-head {
+    background: #9c27b0;
+  }
+
+  &.landmark .marker-head {
+    background: #795548;
+  }
+
+  &.shop .marker-head {
+    background: #3880ff;
+  }
+
+  &.entertainment .marker-head {
+    background: #00bcd4;
+  }
+}
+
+// =====================================================
+// User Location Marker
+// =====================================================
+
+.user-location-marker {
+  .user-marker-outer {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    background: rgba(66, 133, 244, 0.2);
+    border-radius: 50%;
+    animation: pulse-user 2s infinite;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      background: rgba(66, 133, 244, 0.1);
+      border-radius: 50%;
+      animation: pulse-outer 2s infinite;
+    }
+  }
+
+  .user-marker-inner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 14px;
+    height: 14px;
+    background: #4285f4;
+    border: 3px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+}
+
+@keyframes pulse-user {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-outer {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+// =====================================================
+// Map Container Overrides
+// =====================================================
+
+.leaflet-container {
+  background: var(--ue-bg-light);
+  font-family: inherit;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: $radius-lg;
+  box-shadow: $shadow-lg;
+}
+
+.leaflet-popup-content {
+  margin: $spacing-sm $spacing-md;
+  font-size: $font-size-sm;
+}
+
+.leaflet-popup-tip {
+  background: white;
+}
+
+// Hide default zoom controls (we use custom)
+.leaflet-control-zoom {
+  display: none !important;
+}
+
+// Attribution styling
+.leaflet-control-attribution {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.8) !important;
+  padding: 2px 6px;
+  border-radius: $radius-sm 0 0 0;
+
+  a {
+    color: var(--ue-text-secondary);
+  }
+}
+
+// =====================================================
+// Dark Mode
+// =====================================================
+
+@media (prefers-color-scheme: dark) {
+  .leaflet-container {
+    background: var(--ue-bg-gray);
+  }
+
+  .leaflet-popup-content-wrapper,
+  .leaflet-popup-tip {
+    background: var(--ue-bg-light);
+    color: var(--ue-text-primary);
+  }
+
+  .leaflet-control-attribution {
+    background: rgba(0, 0, 0, 0.6) !important;
+    color: var(--ue-text-secondary);
+
+    a {
+      color: var(--ue-text-muted);
+    }
+  }
+
+  .marker-cluster {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  .location-marker {
+    .marker-head {
+      border-color: var(--ue-bg-light);
+    }
+
+    .marker-rating {
+      background: var(--ue-bg-light);
+
+      span {
+        color: var(--ue-text-primary);
+      }
+    }
+  }
+}

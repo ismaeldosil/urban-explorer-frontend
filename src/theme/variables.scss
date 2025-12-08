@@ -1,0 +1,461 @@
+// Urban Explorer - Design Tokens
+// For information on how to create your own theme, please refer to:
+// https://ionicframework.com/docs/theming/
+
+// =============================================================================
+// DESIGN TOKENS - Urban Explorer
+// Basado en: urban-explorer-docs/tickets/UI-COMPONENT-TICKETS.md
+// =============================================================================
+
+// =============================================================================
+// COLORS - Palette
+// =============================================================================
+
+$primary: #3880ff;
+$primary-dark: #2d6cd9;
+$primary-light: #5a9cff;
+$primary-tint: rgba(56, 128, 255, 0.1);
+
+$secondary: #3dc2ff;
+$tertiary: #5260ff;
+
+$success: #28a745;
+$success-light: #d4edda;
+$success-dark: #155724;
+
+$warning: #ffb800;
+$warning-light: #fff3cd;
+$warning-dark: #856404;
+
+$danger: #dc3545;
+$danger-light: #f8d7da;
+$danger-dark: #721c24;
+
+// Category Colors
+$color-restaurant: #ff6b35;
+$color-cafe: #8b4513;
+$color-park: #28a745;
+$color-museum: #9c27b0;
+$color-shop: #3880ff;
+$color-bar: #e91e63;
+$color-default: #3880ff;
+
+// Text Colors
+$text-primary: #1a1a1a;
+$text-secondary: #666666;
+$text-muted: #999999;
+$text-white: #ffffff;
+$text-link: #3880ff;
+
+// Background Colors
+$bg-white: #ffffff;
+$bg-light: #f5f5f5;
+$bg-gray: #e5e5e5;
+$bg-dark: #1a1a1a;
+
+// Border Colors
+$border-light: #e0e0e0;
+$border-medium: #cccccc;
+
+// =============================================================================
+// SPACING
+// =============================================================================
+
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 12px;
+$spacing-lg: 16px;
+$spacing-xl: 24px;
+$spacing-2xl: 32px;
+$spacing-3xl: 48px;
+
+// =============================================================================
+// TYPOGRAPHY
+// =============================================================================
+
+$font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+
+$font-size-xs: 12px;
+$font-size-sm: 14px;
+$font-size-md: 16px;
+$font-size-lg: 18px;
+$font-size-xl: 20px;
+$font-size-2xl: 24px;
+$font-size-3xl: 28px;
+$font-size-4xl: 32px;
+
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+$line-height-tight: 1.2;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.6;
+
+// =============================================================================
+// BORDER RADIUS
+// =============================================================================
+
+$radius-sm: 4px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-xl: 16px;
+$radius-2xl: 24px;
+$radius-full: 9999px;
+
+// =============================================================================
+// SHADOWS
+// =============================================================================
+
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+$shadow-md: 0 2px 8px rgba(0, 0, 0, 0.12);
+$shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.15);
+$shadow-xl: 0 8px 30px rgba(0, 0, 0, 0.2);
+
+// Card shadows
+$shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08);
+$shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.12);
+
+// FAB shadow
+$shadow-fab: 0 2px 12px rgba(0, 0, 0, 0.15);
+
+// =============================================================================
+// Z-INDEX LAYERS
+// =============================================================================
+
+$z-header: 100;
+$z-tab-bar: 100;
+$z-fab: 200;
+$z-modal: 300;
+$z-toast: 400;
+$z-overlay: 500;
+
+// =============================================================================
+// LAYOUT
+// =============================================================================
+
+$header-height: 56px;
+$tab-bar-height: 56px;
+$content-padding-x: 16px;
+$content-padding-y: 12px;
+
+// =============================================================================
+// TRANSITIONS
+// =============================================================================
+
+$transition-fast: 150ms ease;
+$transition-normal: 300ms ease;
+$transition-slow: 500ms ease;
+
+// =============================================================================
+// IONIC CSS VARIABLES - Light Theme
+// =============================================================================
+
+:root {
+  // Primary
+  --ion-color-primary: #{$primary};
+  --ion-color-primary-rgb: 56, 128, 255;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #{$primary-dark};
+  --ion-color-primary-tint: #{$primary-light};
+
+  // Secondary
+  --ion-color-secondary: #{$secondary};
+  --ion-color-secondary-rgb: 61, 194, 255;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #36abe0;
+  --ion-color-secondary-tint: #50c8ff;
+
+  // Tertiary
+  --ion-color-tertiary: #{$tertiary};
+  --ion-color-tertiary-rgb: 82, 96, 255;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #4854e0;
+  --ion-color-tertiary-tint: #6370ff;
+
+  // Success
+  --ion-color-success: #{$success};
+  --ion-color-success-rgb: 40, 167, 69;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #{$success-dark};
+  --ion-color-success-tint: #48b461;
+
+  // Warning
+  --ion-color-warning: #{$warning};
+  --ion-color-warning-rgb: 255, 184, 0;
+  --ion-color-warning-contrast: #000000;
+  --ion-color-warning-contrast-rgb: 0, 0, 0;
+  --ion-color-warning-shade: #e0a200;
+  --ion-color-warning-tint: #ffc21a;
+
+  // Danger
+  --ion-color-danger: #{$danger};
+  --ion-color-danger-rgb: 220, 53, 69;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #{$danger-dark};
+  --ion-color-danger-tint: #e04a5c;
+
+  // Dark
+  --ion-color-dark: #222428;
+  --ion-color-dark-rgb: 34, 36, 40;
+  --ion-color-dark-contrast: #ffffff;
+  --ion-color-dark-contrast-rgb: 255, 255, 255;
+  --ion-color-dark-shade: #1e2023;
+  --ion-color-dark-tint: #383a3e;
+
+  // Medium
+  --ion-color-medium: #{$text-secondary};
+  --ion-color-medium-rgb: 102, 102, 102;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255, 255, 255;
+  --ion-color-medium-shade: #5a5a5a;
+  --ion-color-medium-tint: #757575;
+
+  // Light
+  --ion-color-light: #{$bg-light};
+  --ion-color-light-rgb: 245, 245, 245;
+  --ion-color-light-contrast: #{$text-primary};
+  --ion-color-light-contrast-rgb: 26, 26, 26;
+  --ion-color-light-shade: #d7d7d7;
+  --ion-color-light-tint: #f8f8f8;
+
+  // ==========================================================================
+  // Custom CSS Variables - Urban Explorer
+  // ==========================================================================
+
+  // Text
+  --ue-text-primary: #{$text-primary};
+  --ue-text-secondary: #{$text-secondary};
+  --ue-text-muted: #{$text-muted};
+  --ue-text-white: #{$text-white};
+  --ue-text-link: #{$text-link};
+
+  // Background
+  --ue-bg-white: #{$bg-white};
+  --ue-bg-light: #{$bg-light};
+  --ue-bg-gray: #{$bg-gray};
+
+  // Border
+  --ue-border-light: #{$border-light};
+  --ue-border-medium: #{$border-medium};
+
+  // Spacing (with and without prefix for flexibility)
+  --spacing-xs: #{$spacing-xs};
+  --spacing-sm: #{$spacing-sm};
+  --spacing-md: #{$spacing-md};
+  --spacing-lg: #{$spacing-lg};
+  --spacing-xl: #{$spacing-xl};
+  --ue-spacing-xs: #{$spacing-xs};
+  --ue-spacing-sm: #{$spacing-sm};
+  --ue-spacing-md: #{$spacing-md};
+  --ue-spacing-lg: #{$spacing-lg};
+  --ue-spacing-xl: #{$spacing-xl};
+  --ue-spacing-2xl: #{$spacing-2xl};
+
+  // Typography
+  --font-size-xs: #{$font-size-xs};
+  --font-size-sm: #{$font-size-sm};
+  --font-size-md: #{$font-size-md};
+  --font-size-lg: #{$font-size-lg};
+  --font-size-xl: #{$font-size-xl};
+  --font-size-2xl: #{$font-size-2xl};
+
+  // Border Radius (with and without prefix for flexibility)
+  --radius-sm: #{$radius-sm};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+  --radius-full: #{$radius-full};
+  --ue-radius-sm: #{$radius-sm};
+  --ue-radius-md: #{$radius-md};
+  --ue-radius-lg: #{$radius-lg};
+  --ue-radius-xl: #{$radius-xl};
+  --ue-radius-2xl: #{$radius-2xl};
+  --ue-radius-full: #{$radius-full};
+
+  // Shadows (with and without prefix for flexibility)
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
+  --ue-shadow-sm: #{$shadow-sm};
+  --ue-shadow-md: #{$shadow-md};
+  --ue-shadow-lg: #{$shadow-lg};
+  --ue-shadow-card: #{$shadow-card};
+  --ue-shadow-fab: #{$shadow-fab};
+
+  // Layout
+  --ue-header-height: #{$header-height};
+  --ue-tab-bar-height: #{$tab-bar-height};
+  --ue-content-padding-x: #{$content-padding-x};
+  --ue-content-padding-y: #{$content-padding-y};
+
+  // Category Colors
+  --ue-color-restaurant: #{$color-restaurant};
+  --ue-color-cafe: #{$color-cafe};
+  --ue-color-park: #{$color-park};
+  --ue-color-museum: #{$color-museum};
+  --ue-color-shop: #{$color-shop};
+  --ue-color-bar: #{$color-bar};
+
+  // Star Rating
+  --ue-star-filled: #{$warning};
+  --ue-star-empty: #{$border-light};
+
+  // Input
+  --ue-input-bg: #{$bg-light};
+  --ue-input-bg-focus: #{$bg-white};
+  --ue-input-border: transparent;
+  --ue-input-border-focus: #{$primary};
+  --ue-input-text: #{$text-primary};
+  --ue-input-placeholder: #{$text-secondary};
+
+  // Background
+  --ion-background-color: #{$bg-white};
+  --ion-background-color-rgb: 255, 255, 255;
+
+  // Text
+  --ion-text-color: #{$text-primary};
+  --ion-text-color-rgb: 26, 26, 26;
+
+  // Toolbar
+  --ion-toolbar-background: #{$bg-white};
+  --ion-toolbar-color: #{$text-primary};
+
+  // Tab Bar
+  --ion-tab-bar-background: #{$bg-white};
+  --ion-tab-bar-border-color: #{$border-light};
+  --ion-tab-bar-color: #{$text-secondary};
+  --ion-tab-bar-color-selected: #{$primary};
+
+  // Card
+  --ion-card-background: #{$bg-white};
+
+  // Item
+  --ion-item-background: #{$bg-white};
+}
+
+// =============================================================================
+// DARK THEME
+// =============================================================================
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ion-background-color: #121212;
+    --ion-background-color-rgb: 18, 18, 18;
+
+    --ion-text-color: #ffffff;
+    --ion-text-color-rgb: 255, 255, 255;
+
+    --ion-toolbar-background: #1e1e1e;
+    --ion-toolbar-color: #ffffff;
+
+    --ion-tab-bar-background: #1e1e1e;
+    --ion-tab-bar-border-color: #333333;
+    --ion-tab-bar-color: #999999;
+    --ion-tab-bar-color-selected: #{$primary};
+
+    --ion-card-background: #1e1e1e;
+
+    --ion-item-background: #1e1e1e;
+
+    // Custom Dark Mode Variables
+    --ue-text-primary: #ffffff;
+    --ue-text-secondary: #b0b0b0;
+    --ue-text-muted: #808080;
+
+    --ue-bg-white: #1e1e1e;
+    --ue-bg-light: #2d2d2d;
+    --ue-bg-gray: #3d3d3d;
+
+    --ue-border-light: #404040;
+    --ue-border-medium: #555555;
+
+    --ue-input-bg: #2d2d2d;
+    --ue-input-bg-focus: #1e1e1e;
+    --ue-input-text: #ffffff;
+    --ue-input-placeholder: #808080;
+
+    // iOS specific dark mode fixes
+    --ion-color-step-50: #1e1e1e;
+    --ion-color-step-100: #2a2a2a;
+    --ion-color-step-150: #363636;
+    --ion-color-step-200: #414141;
+    --ion-color-step-250: #4d4d4d;
+    --ion-color-step-300: #595959;
+    --ion-color-step-350: #656565;
+    --ion-color-step-400: #717171;
+    --ion-color-step-450: #7d7d7d;
+    --ion-color-step-500: #898989;
+    --ion-color-step-550: #949494;
+    --ion-color-step-600: #a0a0a0;
+    --ion-color-step-650: #acacac;
+    --ion-color-step-700: #b8b8b8;
+    --ion-color-step-750: #c4c4c4;
+    --ion-color-step-800: #d0d0d0;
+    --ion-color-step-850: #dbdbdb;
+    --ion-color-step-900: #e7e7e7;
+    --ion-color-step-950: #f3f3f3;
+  }
+}
+
+// =============================================================================
+// GLOBAL STYLES
+// =============================================================================
+
+// Fix for input text visibility in both themes
+ion-item {
+  --color: var(--ue-input-text);
+
+  ion-input,
+  ion-textarea {
+    --color: var(--ue-input-text);
+    --placeholder-color: var(--ue-input-placeholder);
+    --placeholder-opacity: 1;
+  }
+}
+
+// Input item styling
+.input-item {
+  --background: var(--ue-input-bg);
+  --border-radius: #{$radius-lg};
+  --padding-start: #{$spacing-lg};
+  --color: var(--ue-input-text);
+
+  ion-input,
+  ion-textarea {
+    --color: var(--ue-input-text);
+    --placeholder-color: var(--ue-input-placeholder);
+    --placeholder-opacity: 1;
+  }
+
+  &:focus-within {
+    --background: var(--ue-input-bg-focus);
+    --border-color: var(--ue-input-border-focus);
+  }
+}
+
+// Card styling
+ion-card {
+  --background: var(--ion-card-background);
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  margin: $spacing-sm $spacing-lg;
+}
+
+// Button styling
+ion-button {
+  --border-radius: #{$radius-lg};
+  font-weight: $font-weight-semibold;
+}
+
+// Segment styling
+ion-segment-button {
+  --color: var(--ue-text-secondary);
+  --color-checked: var(--ion-color-primary);
+  --indicator-color: var(--ion-color-primary);
+}

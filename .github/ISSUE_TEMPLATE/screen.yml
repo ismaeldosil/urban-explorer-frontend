@@ -1,0 +1,100 @@
+name: Screen Implementation
+description: Implement a screen/page from the design specs
+title: "[SCREEN] "
+labels: ["type: feature", "component: navigation", "status: ready"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for implementing screens from SCREEN-IMPLEMENTATION-TICKETS.md
+
+  - type: input
+    id: screen-id
+    attributes:
+      label: Screen ID
+      description: Reference ID from tickets
+      placeholder: "S001"
+    validations:
+      required: true
+
+  - type: input
+    id: screen-name
+    attributes:
+      label: Screen Name
+      description: Technical name of the screen
+      placeholder: "HomeExplorePage"
+    validations:
+      required: true
+
+  - type: input
+    id: route
+    attributes:
+      label: Route
+      description: Navigation route
+      placeholder: "/tabs/explore"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0 - Critical
+        - P1 - High
+        - P2 - Medium
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Brief description of the screen's purpose
+    validations:
+      required: true
+
+  - type: textarea
+    id: components
+    attributes:
+      label: Required Components
+      description: List of components needed
+      placeholder: |
+        - LocationCard (COMP-001)
+        - StarRating (COMP-004)
+        - ...
+
+  - type: textarea
+    id: states
+    attributes:
+      label: Screen States
+      description: States to implement
+      placeholder: |
+        - Loading
+        - Loaded
+        - Empty
+        - Error
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: From the ticket
+      placeholder: |
+        - [ ] Layout matches mockup
+        - [ ] All states implemented
+        - [ ] Tests written (TDD)
+        - [ ] Navigation working
+        - [ ] Accessible
+    validations:
+      required: true
+
+  - type: dropdown
+    id: sprint
+    attributes:
+      label: Target Sprint
+      options:
+        - Sprint 1
+        - Sprint 2
+        - Sprint 3
+        - Sprint 4

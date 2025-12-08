@@ -1,0 +1,284 @@
+format_version: "13"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+project_type: ionic
+
+# ============================================
+# App Configuration
+# ============================================
+app:
+  envs:
+    - PROJECT_LOCATION: "."
+    - NODE_VERSION: "20"
+    - IONIC_PROJECT: "true"
+    # Android
+    - ANDROID_MODULE: app
+    - ANDROID_BUILD_VARIANT: Release
+    - ANDROID_APK_PATH: android/app/build/outputs/apk/release/app-release-unsigned.apk
+    - ANDROID_AAB_PATH: android/app/build/outputs/bundle/release/app-release.aab
+    # iOS
+    - IOS_SCHEME: App
+    - IOS_WORKSPACE: ios/App/App.xcworkspace
+    - IOS_CONFIGURATION: Release
+
+# ============================================
+# Triggers
+# ============================================
+trigger_map:
+  - tag: "v*"
+    workflow: release
+  - push_branch: main
+    workflow: primary
+  - push_branch: develop
+    workflow: primary
+  - pull_request_source_branch: "*"
+    workflow: primary
+
+# ============================================
+# Workflows
+# ============================================
+workflows:
+
+  # ==========================================
+  # Primary Workflow - Build & Test
+  # ==========================================
+  primary:
+    steps:
+      - activate-ssh-key@4:
+          run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+      - git-clone@8: {}
+
+      - nvm@1:
+          inputs:
+            - node_version: $NODE_VERSION
+
+      - npm@1:
+          title: Install dependencies
+          inputs:
+            - command: ci
+
+      - npm@1:
+          title: Run linter
+          inputs:
+            - command: run lint
+          is_skippable: true
+
+      - npm@1:
+          title: Run tests
+          inputs:
+            - command: run test -- --watch=false --browsers=ChromeHeadless
+          is_skippable: true
+
+      - npm@1:
+          title: Build Web
+          inputs:
+            - command: run build -- --configuration=production
+
+      - deploy-to-bitrise-io@2:
+          inputs:
+            - deploy_path: www
+
+  # ==========================================
+  # Android Workflow
+  # ==========================================
+  build-android:
+    steps:
+      - activate-ssh-key@4:
+          run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+      - git-clone@8: {}
+
+      - nvm@1:
+          inputs:
+            - node_version: $NODE_VERSION
+
+      - npm@1:
+          title: Install dependencies
+          inputs:
+            - command: ci
+
+      - script@1:
+          title: Install Ionic CLI
+          inputs:
+            - content: npm install -g @ionic/cli
+
+      - script@1:
+          title: Build Ionic
+          inputs:
+            - content: ionic build --prod
+
+      - script@1:
+          title: Sync Capacitor Android
+          inputs:
+            - content: npx cap sync android
+
+      - install-missing-android-tools@3:
+          inputs:
+            - gradlew_path: android/gradlew
+
+      - android-build@1:
+          title: Build Debug APK
+          inputs:
+            - project_location: android
+            - module: $ANDROID_MODULE
+            - variant: Debug
+
+      - android-build@1:
+          title: Build Release APK
+          inputs:
+            - project_location: android
+            - module: $ANDROID_MODULE
+            - variant: Release
+            - build_type: apk
+
+      - android-build@1:
+          title: Build Release AAB
+          inputs:
+            - project_location: android
+            - module: $ANDROID_MODULE
+            - variant: Release
+            - build_type: aab
+
+      # Optional: Sign APK (configure in Bitrise code signing)
+      # - sign-apk@1:
+      #     inputs:
+      #       - apk_path: $BITRISE_APK_PATH
+
+      - deploy-to-bitrise-io@2: {}
+
+  # ==========================================
+  # iOS Workflow
+  # ==========================================
+  build-ios:
+    steps:
+      - activate-ssh-key@4:
+          run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+      - git-clone@8: {}
+
+      - nvm@1:
+          inputs:
+            - node_version: $NODE_VERSION
+
+      - npm@1:
+          title: Install dependencies
+          inputs:
+            - command: ci
+
+      - script@1:
+          title: Install Ionic CLI
+          inputs:
+            - content: npm install -g @ionic/cli
+
+      - script@1:
+          title: Build Ionic
+          inputs:
+            - content: ionic build --prod
+
+      - script@1:
+          title: Sync Capacitor iOS
+          inputs:
+            - content: npx cap sync ios
+
+      - cocoapods-install@2:
+          inputs:
+            - source_root_path: ios/App
+
+      # Build for Simulator (no signing required)
+      - xcode-build-for-simulator@0:
+          title: Build for Simulator
+          inputs:
+            - project_path: $IOS_WORKSPACE
+            - scheme: $IOS_SCHEME
+            - configuration: $IOS_CONFIGURATION
+            - simulator_device: iPhone 15
+            - simulator_os_version: latest
+
+      # Optional: Build for Device (requires code signing)
+      # Configure certificates in Bitrise > Code Signing
+      # - certificate-and-profile-installer@1: {}
+      #
+      # - xcode-archive@5:
+      #     inputs:
+      #       - project_path: $IOS_WORKSPACE
+      #       - scheme: $IOS_SCHEME
+      #       - configuration: $IOS_CONFIGURATION
+      #       - distribution_method: app-store
+      #
+      # - deploy-to-itunesconnect-deliver@2:
+      #     inputs:
+      #       - connection: api_key
+
+      - deploy-to-bitrise-io@2: {}
+
+  # ==========================================
+  # Release Workflow - All Platforms
+  # ==========================================
+  release:
+    before_run:
+      - primary
+    after_run:
+      - build-android
+      - build-ios
+
+    steps:
+      - script@1:
+          title: Create Release Notes
+          inputs:
+            - content: |
+                #!/bin/bash
+                echo "## Urban Explorer Release" > release_notes.md
+                echo "" >> release_notes.md
+                echo "**Version:** $BITRISE_GIT_TAG" >> release_notes.md
+                echo "**Build:** $BITRISE_BUILD_NUMBER" >> release_notes.md
+                echo "" >> release_notes.md
+                echo "### Artifacts" >> release_notes.md
+                echo "- Web/PWA Build" >> release_notes.md
+                echo "- Android APK (Debug & Release)" >> release_notes.md
+                echo "- Android AAB (for Play Store)" >> release_notes.md
+                echo "- iOS Simulator Build" >> release_notes.md
+
+      - github-release@0:
+          run_if: '{{getenv "GITHUB_API_TOKEN" | ne ""}}'
+          inputs:
+            - username: $GITHUB_USERNAME
+            - repository_url: $GIT_REPOSITORY_URL
+            - tag: $BITRISE_GIT_TAG
+            - name: Urban Explorer $BITRISE_GIT_TAG
+            - body: release_notes.md
+            - draft: "no"
+            - files_to_upload: |
+                $BITRISE_DEPLOY_DIR/*.apk
+                $BITRISE_DEPLOY_DIR/*.aab
+                $BITRISE_DEPLOY_DIR/*.zip
+                $BITRISE_DEPLOY_DIR/*.app
+
+      - deploy-to-bitrise-io@2: {}
+
+  # ==========================================
+  # Deploy to Stores Workflow
+  # ==========================================
+  deploy-stores:
+    description: Deploy to App Store and Play Store
+    before_run:
+      - build-android
+      - build-ios
+
+    steps:
+      # Deploy to Google Play Store
+      - google-play-deploy@3:
+          run_if: '{{getenv "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" | ne ""}}'
+          inputs:
+            - service_account_json_key_path: $GOOGLE_PLAY_SERVICE_ACCOUNT_JSON
+            - package_name: com.urbanexplorer.app
+            - track: internal  # internal, alpha, beta, production
+            - app_path: $ANDROID_AAB_PATH
+
+      # Deploy to App Store (via Deliver/Fastlane)
+      - deploy-to-itunesconnect-deliver@2:
+          run_if: '{{getenv "APPLE_API_KEY" | ne ""}}'
+          inputs:
+            - connection: api_key
+            - api_key_path: $APPLE_API_KEY
+            - api_issuer: $APPLE_API_ISSUER
+            - submit_for_review: "no"
+
+      - deploy-to-bitrise-io@2: {}

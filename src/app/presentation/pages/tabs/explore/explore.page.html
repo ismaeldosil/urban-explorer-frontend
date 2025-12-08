@@ -1,0 +1,111 @@
+<ion-header class="ion-no-border explore-header">
+  <ion-toolbar>
+    <div class="header-content">
+      <button type="button" class="search-trigger" (click)="goToSearch()">
+        <ion-icon name="search-outline" class="search-icon"></ion-icon>
+        <span class="search-placeholder">Buscar lugares...</span>
+      </button>
+      <button type="button" class="notification-btn" (click)="openNotifications()">
+        <ion-icon name="notifications-outline"></ion-icon>
+        @if (unreadNotifications() > 0) {
+          <span class="notification-badge">{{ unreadNotifications() > 9 ? '9+' : unreadNotifications() }}</span>
+        }
+      </button>
+    </div>
+  </ion-toolbar>
+  <div class="category-chips-wrapper">
+    <div class="category-chips">
+      @for (category of categories; track category.id) {
+        <button
+          type="button"
+          class="category-chip"
+          [class.active]="selectedCategory() === category.id"
+          (click)="selectCategory(category.id)"
+        >
+          <ion-icon [name]="category.icon"></ion-icon>
+          <span>{{ category.name }}</span>
+        </button>
+      }
+    </div>
+  </div>
+</ion-header>
+
+<ion-content [scrollY]="false">
+  <div #mapContainer class="map-container"></div>
+
+  <!-- Loading overlay -->
+  @if (isLoading()) {
+    <div class="loading-overlay">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+      <p>Cargando ubicaciones...</p>
+    </div>
+  }
+
+  <!-- Error toast -->
+  @if (errorMessage()) {
+    <div class="error-toast">
+      <ion-icon name="warning-outline"></ion-icon>
+      <span>{{ errorMessage() }}</span>
+      <button type="button" class="error-dismiss" (click)="dismissError()">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+  }
+
+  <!-- GPS permission banner -->
+  @if (locationPermissionDenied()) {
+    <div class="gps-banner">
+      <ion-icon name="location-outline"></ion-icon>
+      <span>Activa tu ubicación para ver lugares cercanos</span>
+      <button type="button" class="gps-settings-btn" (click)="openLocationSettings()">
+        Configurar
+      </button>
+    </div>
+  }
+
+  <!-- Location count badge -->
+  @if (filteredLocations().length > 0 && !isLoading()) {
+    <div class="location-badge">
+      <ion-icon name="location-outline"></ion-icon>
+      <span>{{ filteredLocations().length }} lugares</span>
+    </div>
+  }
+
+  <!-- Map controls -->
+  <div class="map-controls">
+    <button type="button" class="map-control-btn" (click)="zoomIn()">
+      <ion-icon name="add-outline"></ion-icon>
+    </button>
+    <button type="button" class="map-control-btn" (click)="zoomOut()">
+      <ion-icon name="remove-outline"></ion-icon>
+    </button>
+    <button
+      type="button"
+      class="map-control-btn locate-btn"
+      [class.loading]="isLocating()"
+      (click)="centerOnUser()"
+    >
+      @if (isLocating()) {
+        <ion-spinner name="crescent"></ion-spinner>
+      } @else {
+        <ion-icon name="locate-outline"></ion-icon>
+      }
+    </button>
+  </div>
+
+  <!-- Preview card sheet -->
+  @if (selectedLocation()) {
+    <div class="preview-overlay" (click)="closePreview()"></div>
+    <div class="preview-sheet" (touchstart)="onPreviewTouchStart($event)" (touchmove)="onPreviewTouchMove($event)" (touchend)="onPreviewTouchEnd()">
+      <div class="preview-handle"></div>
+      <app-location-preview-card
+        [location]="selectedLocation()!"
+        [distance]="getDistanceToLocation(selectedLocation()!)"
+        [isFavorite]="isLocationFavorite(selectedLocation()!)"
+        (cardClick)="onViewLocationDetails($event)"
+        (favoriteClick)="onPreviewFavorite($event)"
+        (viewDetails)="onViewLocationDetails($event)"
+      />
+    </div>
+  }
+</ion-content>
