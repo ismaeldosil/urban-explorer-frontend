@@ -76,6 +76,12 @@ jobs:
       - name: Build web assets
         run: npm run build -- --configuration=production
 
+      - name: Add Android platform if not exists
+        run: |
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+
       - name: Sync Capacitor
         run: npx cap sync android
 

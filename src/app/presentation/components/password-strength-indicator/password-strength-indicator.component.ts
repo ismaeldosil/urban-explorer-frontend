@@ -203,7 +203,7 @@ export class PasswordStrengthIndicatorComponent implements OnChanges {
       {
         id: 'special',
         label: 'Un carácter especial (!@#$%...)',
-        met: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+        met: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
       },
     ];
 
@@ -255,7 +255,7 @@ export class PasswordStrengthIndicatorComponent implements OnChanges {
     if (!/\d/.test(password)) {
       errors.push('Debe incluir al menos un número');
     }
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
       errors.push('Debe incluir al menos un carácter especial');
     }
 

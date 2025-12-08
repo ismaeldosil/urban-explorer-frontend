@@ -94,6 +94,12 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
+      - name: Add Android platform if not exists
+        run: |
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+
       - name: Sync Capacitor
         run: npx cap sync android
 
@@ -171,7 +177,11 @@ jobs:
           cache: 'npm'
 
       - name: Select Xcode version
-        run: sudo xcode-select -s /Applications/Xcode_15.2.app
+        run: |
+          # List available Xcode versions and use the latest
+          ls /Applications/ | grep Xcode
+          # Use the default Xcode (macos-latest comes with Xcode 15.4+)
+          xcode-select --print-path
 
       - name: Install dependencies
         run: npm ci
@@ -184,6 +194,12 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Add iOS platform if not exists
+        run: |
+          if [ ! -d "ios" ]; then
+            npx cap add ios
+          fi
 
       - name: Sync Capacitor
         run: npx cap sync ios
@@ -201,7 +217,7 @@ jobs:
             -configuration Release \
             -sdk iphonesimulator \
             -derivedDataPath build \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.2' \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
             CODE_SIGNING_ALLOWED=NO \
             build
 
