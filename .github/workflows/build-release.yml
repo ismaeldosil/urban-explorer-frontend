@@ -1,0 +1,319 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+env:
+  NODE_VERSION: '20'
+  JAVA_VERSION: '17'
+
+jobs:
+  # ============================================
+  # Build Web/PWA
+  # ============================================
+  build-web:
+    name: Build Web/PWA
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production
+        run: npm run build -- --configuration=production
+        env:
+          # Add your environment variables here
+          # These should be set in GitHub Secrets
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Create Web artifact
+        run: |
+          cd www
+          zip -r ../urban-explorer-web.zip .
+
+      - name: Upload Web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: urban-explorer-web.zip
+          retention-days: 30
+
+  # ============================================
+  # Build Android APK & AAB
+  # ============================================
+  build-android:
+    name: Build Android
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Ionic CLI
+        run: npm install -g @ionic/cli
+
+      - name: Build production
+        run: ionic build --prod
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build Debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug
+
+      - name: Build Release APK (unsigned)
+        run: |
+          cd android
+          ./gradlew assembleRelease
+
+      - name: Build Release AAB (unsigned)
+        run: |
+          cd android
+          ./gradlew bundleRelease
+
+      # Optional: Sign the APK/AAB
+      # Uncomment and configure if you have signing keys
+      # - name: Sign APK
+      #   uses: r0adkll/sign-android-release@v1
+      #   with:
+      #     releaseDirectory: android/app/build/outputs/apk/release
+      #     signingKeyBase64: ${{ secrets.ANDROID_SIGNING_KEY }}
+      #     alias: ${{ secrets.ANDROID_KEY_ALIAS }}
+      #     keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      #     keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Rename artifacts
+        run: |
+          mv android/app/build/outputs/apk/debug/app-debug.apk urban-explorer-debug.apk
+          mv android/app/build/outputs/apk/release/app-release-unsigned.apk urban-explorer-release.apk
+          mv android/app/build/outputs/bundle/release/app-release.aab urban-explorer-release.aab
+
+      - name: Upload Android Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: urban-explorer-debug.apk
+          retention-days: 30
+
+      - name: Upload Android Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apk
+          path: urban-explorer-release.apk
+          retention-days: 30
+
+      - name: Upload Android AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: urban-explorer-release.aab
+          retention-days: 30
+
+  # ============================================
+  # Build iOS (requires macOS runner)
+  # ============================================
+  build-ios:
+    name: Build iOS
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Select Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_15.2.app
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Ionic CLI
+        run: npm install -g @ionic/cli
+
+      - name: Build production
+        run: ionic build --prod
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Sync Capacitor
+        run: npx cap sync ios
+
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios/App
+          pod install
+
+      - name: Build iOS (Simulator)
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.2' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Create iOS Simulator app archive
+        run: |
+          cd ios/App/build/Build/Products/Release-iphonesimulator
+          zip -r ../../../../../urban-explorer-ios-simulator.zip App.app
+
+      - name: Upload iOS Simulator build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-simulator-build
+          path: ios/App/urban-explorer-ios-simulator.zip
+          retention-days: 30
+
+      # Optional: Build for Device (requires signing)
+      # Uncomment if you have Apple Developer certificates configured
+      # - name: Import Code Signing Certificate
+      #   uses: apple-actions/import-codesign-certs@v2
+      #   with:
+      #     p12-file-base64: ${{ secrets.IOS_P12_BASE64 }}
+      #     p12-password: ${{ secrets.IOS_P12_PASSWORD }}
+      #
+      # - name: Download Provisioning Profile
+      #   uses: apple-actions/download-provisioning-profiles@v1
+      #   with:
+      #     bundle-id: com.urbanexplorer.app
+      #     issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
+      #     api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
+      #     api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+      #
+      # - name: Build iOS Archive
+      #   run: |
+      #     cd ios/App
+      #     xcodebuild -workspace App.xcworkspace \
+      #       -scheme App \
+      #       -configuration Release \
+      #       -archivePath build/App.xcarchive \
+      #       archive
+      #
+      # - name: Export IPA
+      #   run: |
+      #     cd ios/App
+      #     xcodebuild -exportArchive \
+      #       -archivePath build/App.xcarchive \
+      #       -exportPath build \
+      #       -exportOptionsPlist ExportOptions.plist
+
+  # ============================================
+  # Create GitHub Release
+  # ============================================
+  create-release:
+    name: Create Release
+    needs: [build-web, build-android, build-ios]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -la artifacts/
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Urban Explorer v${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## Urban Explorer v${{ steps.get_version.outputs.VERSION }}
+
+            ### Downloads
+
+            | Platform | File | Description |
+            |----------|------|-------------|
+            | 🌐 Web/PWA | `urban-explorer-web.zip` | Deploy to any web server |
+            | 🤖 Android | `urban-explorer-debug.apk` | Debug APK for testing |
+            | 🤖 Android | `urban-explorer-release.apk` | Release APK (unsigned) |
+            | 🤖 Android | `urban-explorer-release.aab` | App Bundle for Play Store |
+            | 🍎 iOS | `urban-explorer-ios-simulator.zip` | Simulator build |
+
+            ### Installation
+
+            **Android APK:**
+            1. Download `urban-explorer-debug.apk`
+            2. Enable "Install from unknown sources" on your device
+            3. Open the APK file to install
+
+            **iOS Simulator:**
+            1. Download and unzip `urban-explorer-ios-simulator.zip`
+            2. Drag `App.app` to your iOS Simulator
+
+            **Web:**
+            1. Download and unzip `urban-explorer-web.zip`
+            2. Deploy contents to your web server or hosting service
+
+          files: |
+            artifacts/web-build/urban-explorer-web.zip
+            artifacts/android-debug-apk/urban-explorer-debug.apk
+            artifacts/android-release-apk/urban-explorer-release.apk
+            artifacts/android-aab/urban-explorer-release.aab
+            artifacts/ios-simulator-build/urban-explorer-ios-simulator.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
