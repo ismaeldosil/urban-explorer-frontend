@@ -12,12 +12,13 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { IonicModule, ModalController } from '@ionic/angular';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
-import { toSignal } from '@angular/core/rxjs-interop';
 
 import { SearchInputComponent } from '../../../components/search-input/search-input.component';
 import { LocationCardComponent, LocationCardData } from '../../../components/location-card/location-card.component';
 import { SearchLocationsUseCase } from '@application/use-cases/locations';
 import { LocationEntity } from '@core/entities/location.entity';
+import { CapacitorGeolocationAdapter } from '@infrastructure/adapters/capacitor-geolocation.adapter';
+import { Coordinates } from '@core/value-objects/coordinates.vo';
 
 /** UI state for search page */
 type SearchState = 'initial' | 'typing' | 'loading' | 'results' | 'empty' | 'error';
@@ -67,6 +68,7 @@ export class SearchPage implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly modalController = inject(ModalController);
   private readonly searchUseCase = inject(SearchLocationsUseCase);
+  private readonly geolocationAdapter = inject(CapacitorGeolocationAdapter);
 
   private readonly destroy$ = new Subject<void>();
   private readonly searchQuery$ = new Subject<string>();
@@ -79,6 +81,8 @@ export class SearchPage implements OnInit, OnDestroy {
   readonly errorMessage = signal('');
   readonly selectedCategory = signal('');
   readonly recentSearches = signal<string[]>([]);
+  readonly userPosition = signal<Coordinates | null>(null);
+  readonly sortBy = signal<'relevance' | 'distance' | 'rating'>('relevance');
   readonly popularNearby = signal<PopularLocation[]>([
     { id: '1', name: 'Mercado Central', rating: 4.7, distance: '0.5 km' },
     { id: '2', name: 'Parque de las Esculturas', rating: 4.8, distance: '1.2 km' },
@@ -106,6 +110,31 @@ export class SearchPage implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadSearchHistory();
     this.setupSearchDebounce();
+    this.initializeUserLocation();
+  }
+
+  private async initializeUserLocation(): Promise<void> {
+    try {
+      const coords = await this.geolocationAdapter.getCurrentPosition();
+      this.userPosition.set(coords);
+    } catch {
+      // Fallback to browser API
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const coords = Coordinates.create(
+              position.coords.latitude,
+              position.coords.longitude
+            );
+            this.userPosition.set(coords);
+          },
+          () => {
+            // Silently fail - distance features won't be available
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      }
+    }
   }
 
   ionViewDidEnter(): void {
@@ -327,19 +356,75 @@ export class SearchPage implements OnInit, OnDestroy {
     return rating.toFixed(1);
   }
 
+  setSortBy(sort: 'relevance' | 'distance' | 'rating'): void {
+    this.sortBy.set(sort);
+    // Re-sort existing results
+    if (this.results().length > 0) {
+      const sorted = this.sortResults(this.results());
+      this.results.set(sorted);
+    }
+  }
+
   // Private methods
   private mapEntitiesToCardData(entities: LocationEntity[]): LocationCardData[] {
-    return entities.map(entity => ({
-      id: entity.id,
-      name: entity.name,
-      imageUrl: entity.imageUrl ?? undefined,
-      rating: entity.rating,
-      reviewCount: entity.reviewCount || 0,
-      priceLevel: 2,
-      distance: undefined,
-      category: this.getCategoryName(entity.category),
-      isOpen: true
-    }));
+    const userPos = this.userPosition();
+
+    const mapped = entities.map(entity => {
+      let distance: number | undefined;
+
+      if (userPos && entity.coordinates) {
+        // Calculate distance using Haversine formula (in km)
+        const R = 6371;
+        const dLat = this.toRad(entity.coordinates.latitude - userPos.latitude);
+        const dLon = this.toRad(entity.coordinates.longitude - userPos.longitude);
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(this.toRad(userPos.latitude)) *
+            Math.cos(this.toRad(entity.coordinates.latitude)) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        distance = R * c;
+      }
+
+      return {
+        id: entity.id,
+        name: entity.name,
+        imageUrl: entity.imageUrl ?? undefined,
+        rating: entity.rating,
+        reviewCount: entity.reviewCount || 0,
+        priceLevel: 2,
+        distance,
+        category: this.getCategoryName(entity.category),
+        isOpen: true
+      };
+    });
+
+    return this.sortResults(mapped);
+  }
+
+  private sortResults(results: LocationCardData[]): LocationCardData[] {
+    const sortType = this.sortBy();
+
+    if (sortType === 'distance') {
+      return [...results].sort((a, b) => {
+        if (a.distance === undefined && b.distance === undefined) return 0;
+        if (a.distance === undefined) return 1;
+        if (b.distance === undefined) return -1;
+        return a.distance - b.distance;
+      });
+    }
+
+    if (sortType === 'rating') {
+      return [...results].sort((a, b) => b.rating - a.rating);
+    }
+
+    // Default: relevance (original order)
+    return results;
+  }
+
+  private toRad(deg: number): number {
+    return deg * (Math.PI / 180);
   }
 
   private getCategoryName(categoryId: string): string {

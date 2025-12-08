@@ -249,10 +249,17 @@ export class LocationCardComponent {
     return '$'.repeat(this.location.priceLevel);
   }
 
-  formatDistance(meters: number): string {
-    if (meters >= 1000) {
-      return `${(meters / 1000).toFixed(1)} km`;
+  formatDistance(distanceKm: number): string {
+    // Distance is in km
+    if (distanceKm < 1) {
+      const meters = Math.round(distanceKm * 1000);
+      // Round to nearest 50 meters for cleaner display
+      const rounded = Math.round(meters / 50) * 50;
+      return `${rounded} m`;
     }
-    return `${Math.round(meters)} m`;
+    if (distanceKm < 10) {
+      return `${distanceKm.toFixed(1)} km`;
+    }
+    return `${Math.round(distanceKm)} km`;
   }
 }
