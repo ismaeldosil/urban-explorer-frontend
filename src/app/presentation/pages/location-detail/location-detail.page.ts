@@ -217,10 +217,6 @@ export class LocationDetailPage implements OnInit, OnDestroy, AfterViewInit {
     this.loadLocation();
   }
 
-  ngAfterViewInit(): void {
-    // Mini map will be initialized after location loads
-  }
-
   ngOnDestroy(): void {
     if (this.miniMap) {
       this.miniMap.remove();
