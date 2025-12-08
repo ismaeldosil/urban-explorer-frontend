@@ -245,7 +245,12 @@ $transition-slow: 500ms ease;
   --ue-border-light: #{$border-light};
   --ue-border-medium: #{$border-medium};
 
-  // Spacing
+  // Spacing (with and without prefix for flexibility)
+  --spacing-xs: #{$spacing-xs};
+  --spacing-sm: #{$spacing-sm};
+  --spacing-md: #{$spacing-md};
+  --spacing-lg: #{$spacing-lg};
+  --spacing-xl: #{$spacing-xl};
   --ue-spacing-xs: #{$spacing-xs};
   --ue-spacing-sm: #{$spacing-sm};
   --ue-spacing-md: #{$spacing-md};
@@ -253,7 +258,19 @@ $transition-slow: 500ms ease;
   --ue-spacing-xl: #{$spacing-xl};
   --ue-spacing-2xl: #{$spacing-2xl};
 
-  // Border Radius
+  // Typography
+  --font-size-xs: #{$font-size-xs};
+  --font-size-sm: #{$font-size-sm};
+  --font-size-md: #{$font-size-md};
+  --font-size-lg: #{$font-size-lg};
+  --font-size-xl: #{$font-size-xl};
+  --font-size-2xl: #{$font-size-2xl};
+
+  // Border Radius (with and without prefix for flexibility)
+  --radius-sm: #{$radius-sm};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+  --radius-full: #{$radius-full};
   --ue-radius-sm: #{$radius-sm};
   --ue-radius-md: #{$radius-md};
   --ue-radius-lg: #{$radius-lg};
@@ -261,7 +278,10 @@ $transition-slow: 500ms ease;
   --ue-radius-2xl: #{$radius-2xl};
   --ue-radius-full: #{$radius-full};
 
-  // Shadows
+  // Shadows (with and without prefix for flexibility)
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
   --ue-shadow-sm: #{$shadow-sm};
   --ue-shadow-md: #{$shadow-md};
   --ue-shadow-lg: #{$shadow-lg};

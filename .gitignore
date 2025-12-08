@@ -1,9 +1,11 @@
 # Dependencies
 node_modules/
+.npm
 
-# Build
-www/
+# Build outputs
 dist/
+www/
+build/
 .angular/
 
 # Native
@@ -22,22 +24,23 @@ android/
 .DS_Store
 Thumbs.db
 
-# Environment
+# Environment files with secrets
 .env
 .env.local
 .env.*.local
+**/environments/environment.ts
+**/environments/environment.prod.ts
+
+# Logs
+logs/
+*.log
+npm-debug.log*
 
 # Testing
 coverage/
 .nyc_output/
 
-# Misc
-*.log
-npm-debug.log*
-.claude
-CLAUDE.md
-
-# Signing keys - NEVER COMMIT
+# Capacitor / Signing keys - NEVER COMMIT
 *.keystore
 *.jks
 *.p12
@@ -45,3 +48,17 @@ CLAUDE.md
 keystore-base64.txt
 cert-base64.txt
 *.mobileprovision
+
+# Misc
+.tmp/
+.cache/
+*.tgz
+
+# MCP config (contains local paths)
+.mcp.json
+
+# Claude Code symlinks (local only - urban-explorer-docs is a separate private repo)
+CLAUDE.md
+.claude
+**/CLAUDE.md
+**/.claude

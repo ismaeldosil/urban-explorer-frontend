@@ -1,0 +1,70 @@
+name: Database Change
+description: Schema change, migration, or RLS policy
+title: "[DB] "
+labels: ["type: feature", "component: database"]
+body:
+  - type: dropdown
+    id: change-type
+    attributes:
+      label: Change Type
+      options:
+        - New table
+        - Alter table
+        - New index
+        - RLS policy
+        - Migration
+        - Seed data
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0 - Critical
+        - P1 - High
+        - P2 - Medium
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What needs to change and why
+    validations:
+      required: true
+
+  - type: textarea
+    id: sql
+    attributes:
+      label: SQL (Draft)
+      description: Draft SQL for the change
+      render: sql
+      placeholder: |
+        -- Migration
+        CREATE TABLE ...
+
+        -- RLS
+        ALTER TABLE ... ENABLE ROW LEVEL SECURITY;
+        CREATE POLICY ...
+
+  - type: textarea
+    id: rollback
+    attributes:
+      label: Rollback Plan
+      description: How to revert if needed
+      placeholder: DROP TABLE ...
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      placeholder: |
+        - [ ] Migration runs without errors
+        - [ ] RLS policies tested
+        - [ ] Indexes created
+        - [ ] TypeScript types generated
+    validations:
+      required: true
