@@ -36,3 +36,12 @@ coverage/
 npm-debug.log*
 .claude
 CLAUDE.md
+
+# Signing keys - NEVER COMMIT
+*.keystore
+*.jks
+*.p12
+*.p8
+keystore-base64.txt
+cert-base64.txt
+*.mobileprovision
