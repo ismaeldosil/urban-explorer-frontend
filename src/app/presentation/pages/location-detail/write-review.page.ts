@@ -18,14 +18,16 @@ import {
   IonChip,
   AlertController,
   ToastController,
+  ActionSheetController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { star, starOutline, camera, close, checkmark } from 'ionicons/icons';
+import { star, starOutline, camera, close, checkmark, image, trash } from 'ionicons/icons';
 
 import { AuthStateService } from '@infrastructure/services/auth-state.service';
-import { REVIEW_REPOSITORY } from '@infrastructure/di/tokens';
+import { REVIEW_REPOSITORY, FILE_STORAGE_PORT } from '@infrastructure/di/tokens';
 import { GetLocationDetailUseCase } from '@application/use-cases/locations/get-location-detail.usecase';
 import { LocationEntity } from '@core/entities/location.entity';
+import { CameraService, CapturedPhoto } from '@infrastructure/services/camera.service';
 
 @Component({
   selector: 'app-write-review',
@@ -136,14 +138,36 @@ import { LocationEntity } from '@core/entities/location.entity';
         </div>
       </div>
 
-      <!-- Photos Section (placeholder) -->
+      <!-- Photos Section -->
       <div class="photos-section">
         <h3>Photos (optional)</h3>
-        <ion-button fill="outline" expand="block" (click)="addPhoto()">
-          <ion-icon slot="start" name="camera"></ion-icon>
-          Add Photos
-        </ion-button>
-        <p class="photos-hint">Coming soon - photo upload feature</p>
+        <p class="photos-hint">Add up to {{ maxPhotos }} photos ({{ photos().length }}/{{ maxPhotos }})</p>
+
+        @if (photos().length > 0) {
+          <div class="photos-grid">
+            @for (photo of photos(); track photo.dataUrl; let i = $index) {
+              <div class="photo-item">
+                <img [src]="photo.dataUrl" alt="Review photo {{ i + 1 }}" />
+                <ion-button
+                  class="remove-photo-btn"
+                  fill="clear"
+                  size="small"
+                  color="danger"
+                  (click)="removePhoto(i)"
+                >
+                  <ion-icon slot="icon-only" name="close"></ion-icon>
+                </ion-button>
+              </div>
+            }
+          </div>
+        }
+
+        @if (photos().length < maxPhotos) {
+          <ion-button fill="outline" expand="block" (click)="addPhoto()">
+            <ion-icon slot="start" name="camera"></ion-icon>
+            {{ photos().length > 0 ? 'Add More Photos' : 'Add Photos' }}
+          </ion-button>
+        }
       </div>
 
       <!-- Guidelines -->
@@ -265,16 +289,50 @@ import { LocationEntity } from '@core/entities/location.entity';
       margin-bottom: 24px;
 
       h3 {
-        margin: 0 0 12px;
+        margin: 0 0 4px;
         font-size: 16px;
         font-weight: 600;
       }
 
       .photos-hint {
-        margin: 8px 0 0;
+        margin: 0 0 12px;
         font-size: 12px;
         color: var(--ion-color-medium);
-        text-align: center;
+      }
+
+      .photos-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .photo-item {
+        position: relative;
+        aspect-ratio: 1;
+        border-radius: 8px;
+        overflow: hidden;
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .remove-photo-btn {
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          --padding-start: 4px;
+          --padding-end: 4px;
+          --background: rgba(0, 0, 0, 0.6);
+          --border-radius: 50%;
+
+          ion-icon {
+            color: white;
+            font-size: 16px;
+          }
+        }
       }
     }
 
@@ -308,9 +366,12 @@ export class WriteReviewPage implements OnInit {
   private router = inject(Router);
   private alertController = inject(AlertController);
   private toastController = inject(ToastController);
+  private actionSheetController = inject(ActionSheetController);
   private authStateService = inject(AuthStateService);
   private reviewRepository = inject(REVIEW_REPOSITORY);
+  private fileStorage = inject(FILE_STORAGE_PORT);
   private getLocationDetailUseCase = inject(GetLocationDetailUseCase);
+  private cameraService = inject(CameraService);
 
   locationId = '';
   location = signal<LocationEntity | null>(null);
@@ -318,6 +379,10 @@ export class WriteReviewPage implements OnInit {
   comment = '';
   selectedTags = signal<string[]>([]);
   isSubmitting = signal(false);
+  photos = signal<CapturedPhoto[]>([]);
+  isUploadingPhoto = signal(false);
+
+  readonly maxPhotos = 5;
 
   availableTags = [
     'Great food',
@@ -345,7 +410,7 @@ export class WriteReviewPage implements OnInit {
   });
 
   constructor() {
-    addIcons({ star, starOutline, camera, close, checkmark });
+    addIcons({ star, starOutline, camera, close, checkmark, image, trash });
   }
 
   ngOnInit(): void {
@@ -385,12 +450,82 @@ export class WriteReviewPage implements OnInit {
   }
 
   async addPhoto(): Promise<void> {
-    const toast = await this.toastController.create({
-      message: 'Photo upload coming soon!',
-      duration: 2000,
-      position: 'bottom',
+    if (this.photos().length >= this.maxPhotos) {
+      const toast = await this.toastController.create({
+        message: `Maximum ${this.maxPhotos} photos allowed`,
+        duration: 2000,
+        position: 'bottom',
+        color: 'warning',
+      });
+      await toast.present();
+      return;
+    }
+
+    const actionSheet = await this.actionSheetController.create({
+      header: 'Add Photo',
+      buttons: [
+        {
+          text: 'Take Photo',
+          icon: 'camera',
+          handler: () => {
+            this.capturePhoto('camera');
+          },
+        },
+        {
+          text: 'Choose from Gallery',
+          icon: 'image',
+          handler: () => {
+            this.capturePhoto('gallery');
+          },
+        },
+        {
+          text: 'Cancel',
+          icon: 'close',
+          role: 'cancel',
+        },
+      ],
     });
-    await toast.present();
+    await actionSheet.present();
+  }
+
+  private async capturePhoto(source: 'camera' | 'gallery'): Promise<void> {
+    try {
+      const hasPermission = await this.cameraService.checkPermissions();
+      if (!hasPermission) {
+        const alert = await this.alertController.create({
+          header: 'Permission Required',
+          message: 'Camera and photo permissions are required to add photos.',
+          buttons: ['OK'],
+        });
+        await alert.present();
+        return;
+      }
+
+      const photo = await this.cameraService.takePhoto(source);
+      if (photo) {
+        this.photos.update((current) => [...current, photo]);
+        const toast = await this.toastController.create({
+          message: 'Photo added!',
+          duration: 1500,
+          position: 'bottom',
+          color: 'success',
+        });
+        await toast.present();
+      }
+    } catch (error) {
+      console.error('Error capturing photo:', error);
+      const toast = await this.toastController.create({
+        message: 'Failed to capture photo. Please try again.',
+        duration: 2000,
+        position: 'bottom',
+        color: 'danger',
+      });
+      await toast.present();
+    }
+  }
+
+  removePhoto(index: number): void {
+    this.photos.update((current) => current.filter((_, i) => i !== index));
   }
 
   async submitReview(): Promise<void> {
@@ -405,12 +540,33 @@ export class WriteReviewPage implements OnInit {
     this.isSubmitting.set(true);
 
     try {
+      // Upload photos first
+      const photoUrls: string[] = [];
+
+      if (this.photos().length > 0) {
+        for (const photo of this.photos()) {
+          const fileName = `review_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${this.cameraService.getFileExtension(photo.dataUrl)}`;
+          const path = this.fileStorage.generatePath('reviews', fileName, user.id);
+
+          const uploadResult = await this.fileStorage.uploadBase64(
+            'review-photos',
+            path,
+            photo.dataUrl,
+            `image/${this.cameraService.getFileExtension(photo.dataUrl)}`
+          );
+
+          if (uploadResult.success && uploadResult.data) {
+            photoUrls.push(uploadResult.data.publicUrl);
+          }
+        }
+      }
+
       const result = await this.reviewRepository.create({
         locationId: this.locationId,
         userId: user.id,
         rating: this.rating(),
         comment: this.comment,
-        photos: [],
+        photos: photoUrls,
         tags: this.selectedTags(),
       });
 
