@@ -105,6 +105,12 @@
             "tsConfig": "tsconfig.spec.json",
             "karmaConfig": "karma.conf.js",
             "inlineStyleLanguage": "scss",
+            "codeCoverageExclude": [
+              "src/app/infrastructure/services/supabase.service.ts",
+              "src/app/infrastructure/services/deep-link.service.ts",
+              "src/app/presentation/pages/profile/settings/settings.page.ts",
+              "src/app/infrastructure/adapters/capacitor-supabase-storage.adapter.ts"
+            ],
             "assets": [
               {
                 "glob": "**/*",

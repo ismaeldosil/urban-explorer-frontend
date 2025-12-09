@@ -3,8 +3,8 @@ import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
 import { StatCardComponent } from './stat-card.component';
 
-// TODO: Fix tests - Ionic card mocking
-xdescribe('StatCardComponent', () => {
+// Unit tests for component logic (no DOM queries)
+describe('StatCardComponent', () => {
   let component: StatCardComponent;
   let fixture: ComponentFixture<StatCardComponent>;
 
@@ -85,6 +85,86 @@ xdescribe('StatCardComponent', () => {
       component.color = 'danger';
       expect(component.color).toBe('danger');
     });
+  });
+
+  describe('getIconBackground', () => {
+    it('should return primary background for primary color', () => {
+      component.color = 'primary';
+      expect(component.getIconBackground()).toBe('rgba(var(--ion-color-primary-rgb), 0.1)');
+    });
+
+    it('should return secondary background for secondary color', () => {
+      component.color = 'secondary';
+      expect(component.getIconBackground()).toBe('rgba(var(--ion-color-secondary-rgb), 0.1)');
+    });
+
+    it('should return success background for success color', () => {
+      component.color = 'success';
+      expect(component.getIconBackground()).toBe('rgba(var(--ion-color-success-rgb), 0.1)');
+    });
+
+    it('should return warning background for warning color', () => {
+      component.color = 'warning';
+      expect(component.getIconBackground()).toBe('rgba(var(--ion-color-warning-rgb), 0.1)');
+    });
+
+    it('should return danger background for danger color', () => {
+      component.color = 'danger';
+      expect(component.getIconBackground()).toBe('rgba(var(--ion-color-danger-rgb), 0.1)');
+    });
+
+    it('should fallback to primary for unknown color', () => {
+      (component as any).color = 'unknown';
+      expect(component.getIconBackground()).toBe('rgba(var(--ion-color-primary-rgb), 0.1)');
+    });
+  });
+
+  describe('getIconColor', () => {
+    it('should return primary color for primary', () => {
+      component.color = 'primary';
+      expect(component.getIconColor()).toBe('var(--ion-color-primary)');
+    });
+
+    it('should return secondary color for secondary', () => {
+      component.color = 'secondary';
+      expect(component.getIconColor()).toBe('var(--ion-color-secondary)');
+    });
+
+    it('should return success color for success', () => {
+      component.color = 'success';
+      expect(component.getIconColor()).toBe('var(--ion-color-success)');
+    });
+
+    it('should return warning color for warning', () => {
+      component.color = 'warning';
+      expect(component.getIconColor()).toBe('var(--ion-color-warning)');
+    });
+
+    it('should return danger color for danger', () => {
+      component.color = 'danger';
+      expect(component.getIconColor()).toBe('var(--ion-color-danger)');
+    });
+
+    it('should fallback to primary for unknown color', () => {
+      (component as any).color = 'unknown';
+      expect(component.getIconColor()).toBe('var(--ion-color-primary)');
+    });
+  });
+});
+
+// Template tests disabled due to Ionic shadow DOM issues
+xdescribe('StatCardComponent Template Tests', () => {
+  let component: StatCardComponent;
+  let fixture: ComponentFixture<StatCardComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [StatCardComponent, IonicModule.forRoot()],
+      schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(StatCardComponent);
+    component = fixture.componentInstance;
   });
 
   describe('Template Rendering', () => {

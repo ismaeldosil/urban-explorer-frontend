@@ -11,7 +11,7 @@ import {
   ActionSheetController,
 } from '@ionic/angular/standalone';
 
-// TODO: Fix tests - need to properly mock Capacitor Preferences and signals
+// Disabled due to NavController mocking complexity
 xdescribe('SettingsPage', () => {
   let component: SettingsPage;
   let fixture: ComponentFixture<SettingsPage>;
