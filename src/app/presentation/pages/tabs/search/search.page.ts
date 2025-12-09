@@ -15,9 +15,11 @@ import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 
 import { SearchInputComponent } from '../../../components/search-input/search-input.component';
 import { LocationCardComponent, LocationCardData } from '../../../components/location-card/location-card.component';
+import { SearchFilterModalComponent } from '../../../components/search-filter-modal';
 import { SearchLocationsUseCase } from '@application/use-cases/locations';
 import { LocationEntity } from '@core/entities/location.entity';
-import { CapacitorGeolocationAdapter } from '@infrastructure/adapters/capacitor-geolocation.adapter';
+import { SearchFilters } from '@core/repositories/location.repository';
+import { GeolocationService } from '@infrastructure/services/geolocation.service';
 import { Coordinates } from '@core/value-objects/coordinates.vo';
 
 /** UI state for search page */
@@ -68,7 +70,7 @@ export class SearchPage implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly modalController = inject(ModalController);
   private readonly searchUseCase = inject(SearchLocationsUseCase);
-  private readonly geolocationAdapter = inject(CapacitorGeolocationAdapter);
+  private readonly geolocationService = inject(GeolocationService);
 
   private readonly destroy$ = new Subject<void>();
   private readonly searchQuery$ = new Subject<string>();
@@ -83,6 +85,7 @@ export class SearchPage implements OnInit, OnDestroy {
   readonly recentSearches = signal<string[]>([]);
   readonly userPosition = signal<Coordinates | null>(null);
   readonly sortBy = signal<'relevance' | 'distance' | 'rating'>('relevance');
+  readonly filters = signal<SearchFilters>({});
   readonly popularNearby = signal<PopularLocation[]>([
     { id: '1', name: 'Mercado Central', rating: 4.7, distance: '0.5 km' },
     { id: '2', name: 'Parque de las Esculturas', rating: 4.8, distance: '1.2 km' },
@@ -114,10 +117,11 @@ export class SearchPage implements OnInit, OnDestroy {
   }
 
   private async initializeUserLocation(): Promise<void> {
-    try {
-      const coords = await this.geolocationAdapter.getCurrentPosition();
-      this.userPosition.set(coords);
-    } catch {
+    const result = await this.geolocationService.getCurrentPosition();
+
+    if (result.success) {
+      this.userPosition.set(result.data.coordinates);
+    } else {
       // Fallback to browser API
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
@@ -228,11 +232,15 @@ export class SearchPage implements OnInit, OnDestroy {
     this.errorMessage.set('');
 
     try {
+      // Merge filters signal with any selected category
+      const currentFilters = { ...this.filters() };
+      if (this.selectedCategory() && !currentFilters.categoryId) {
+        currentFilters.categoryId = this.selectedCategory();
+      }
+
       const result = await this.searchUseCase.execute({
         query,
-        filters: this.selectedCategory()
-          ? { categoryId: this.selectedCategory() }
-          : undefined,
+        filters: Object.keys(currentFilters).length > 0 ? currentFilters : undefined,
         limit: 20
       });
 
@@ -321,8 +329,25 @@ export class SearchPage implements OnInit, OnDestroy {
   }
 
   async openFilters(): Promise<void> {
-    // TODO: Implement filter modal
-    console.log('Open filters modal');
+    const modal = await this.modalController.create({
+      component: SearchFilterModalComponent,
+      componentProps: {
+        initialFilters: this.filters(),
+        categories: this.categories.map(c => ({ id: c.id, name: c.name, icon: c.icon })),
+      },
+    });
+
+    await modal.present();
+
+    const { data, role } = await modal.onWillDismiss();
+
+    if (role === 'apply' && data) {
+      this.filters.set(data as SearchFilters);
+      // Re-search with new filters
+      if (this.query().length >= 2) {
+        this.performSearch(this.query());
+      }
+    }
   }
 
   onLocationClick(location: LocationCardData): void {
@@ -354,6 +379,20 @@ export class SearchPage implements OnInit, OnDestroy {
 
   formatRating(rating: number): string {
     return rating.toFixed(1);
+  }
+
+  getSortLabel(sort: 'relevance' | 'distance' | 'rating'): string {
+    const labels: Record<'relevance' | 'distance' | 'rating', string> = {
+      relevance: 'Relevancia',
+      distance: 'Cercanía',
+      rating: 'Rating',
+    };
+    return labels[sort];
+  }
+
+  onSortChange(event: CustomEvent): void {
+    const value = event.detail.value as 'relevance' | 'distance' | 'rating';
+    this.setSortBy(value);
   }
 
   setSortBy(sort: 'relevance' | 'distance' | 'rating'): void {
