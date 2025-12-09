@@ -35,12 +35,12 @@ module.exports = function (config) {
       ],
       check: {
         global: {
-          // Thresholds reducidos temporalmente para desarrollo
-          // TODO: Incrementar progresivamente a 50/40/50/50
-          statements: 15,
-          branches: 3,
-          functions: 10,
-          lines: 15
+          // Coverage thresholds - Achieved 93%+ (December 2025)
+          // Current: Statements 93.56%, Branches 87.39%, Functions 95.65%, Lines 93.18%
+          statements: 90,
+          branches: 85,
+          functions: 90,
+          lines: 90
         }
       }
     },

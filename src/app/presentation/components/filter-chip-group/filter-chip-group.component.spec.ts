@@ -3,8 +3,8 @@ import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
 import { FilterChipGroupComponent, FilterOption } from './filter-chip-group.component';
 
-// TODO: Fix tests - Ionic chip mocking
-xdescribe('FilterChipGroupComponent', () => {
+// Unit tests for component logic (no DOM queries)
+describe('FilterChipGroupComponent', () => {
   let component: FilterChipGroupComponent;
   let fixture: ComponentFixture<FilterChipGroupComponent>;
 
@@ -248,6 +248,29 @@ xdescribe('FilterChipGroupComponent', () => {
       component.onChipClick('parks');
       expect(component.filterChange.emit).toHaveBeenCalledWith([]);
     });
+  });
+});
+
+// Template tests disabled due to Ionic shadow DOM issues with DOM queries
+xdescribe('FilterChipGroupComponent Template Tests', () => {
+  let component: FilterChipGroupComponent;
+  let fixture: ComponentFixture<FilterChipGroupComponent>;
+
+  const mockFilters: FilterOption[] = [
+    { id: 'all', label: 'All' },
+    { id: 'restaurants', label: 'Restaurants' },
+    { id: 'parks', label: 'Parks' },
+    { id: 'museums', label: 'Museums' }
+  ];
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [FilterChipGroupComponent, IonicModule.forRoot()],
+      schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(FilterChipGroupComponent);
+    component = fixture.componentInstance;
   });
 
   describe('Template Rendering - Empty State', () => {

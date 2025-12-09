@@ -12,7 +12,8 @@ export class CreateReviewUseCase {
     userId: string,
     rating: number,
     comment: string,
-    imageUrls?: string[]
+    photos?: string[],
+    tags?: string[]
   ): Promise<Result<ReviewEntity>> {
     try {
       return await this.reviewRepository.create({
@@ -20,7 +21,8 @@ export class CreateReviewUseCase {
         userId,
         rating,
         comment,
-        imageUrls,
+        photos: photos ?? [],
+        tags: tags ?? [],
       });
     } catch (error) {
       return Result.fail(error as Error);

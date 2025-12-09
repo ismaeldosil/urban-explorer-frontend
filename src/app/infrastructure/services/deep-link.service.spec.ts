@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { Platform } from '@ionic/angular/standalone';
 import { DeepLinkService } from './deep-link.service';
 
-// TODO: Fix tests - Capacitor App plugin mocking
+// Disabled due to Capacitor App plugin mocking complexity
 xdescribe('DeepLinkService', () => {
   let service: DeepLinkService;
   let routerSpy: jasmine.SpyObj<Router>;

@@ -1,21 +1,25 @@
 import { LocationEntity } from '@core/entities/location.entity';
+import { Coordinates } from '@core/value-objects/coordinates.vo';
 import { LocationDto } from '../dtos/location.dto';
 
 export class LocationMapper {
   static toEntity(dto: LocationDto): LocationEntity {
-    return {
+    return LocationEntity.create({
       id: dto.id,
       name: dto.name,
       description: dto.description,
-      latitude: dto.latitude,
-      longitude: dto.longitude,
-      categoryId: dto.categoryId,
+      category: dto.categoryId,
+      coordinates: Coordinates.create(dto.latitude, dto.longitude),
+      address: '',
+      city: '',
+      country: '',
       imageUrl: dto.imageUrl,
-      averageRating: dto.averageRating,
+      rating: dto.averageRating ?? 0,
       reviewCount: dto.reviewCount,
+      createdBy: '',
       createdAt: new Date(dto.createdAt),
       updatedAt: new Date(dto.updatedAt),
-    };
+    });
   }
 
   static toDto(entity: LocationEntity): LocationDto {
@@ -23,11 +27,11 @@ export class LocationMapper {
       id: entity.id,
       name: entity.name,
       description: entity.description,
-      latitude: entity.latitude,
-      longitude: entity.longitude,
-      categoryId: entity.categoryId,
+      latitude: entity.coordinates.latitude,
+      longitude: entity.coordinates.longitude,
+      categoryId: entity.category,
       imageUrl: entity.imageUrl,
-      averageRating: entity.averageRating,
+      averageRating: entity.rating,
       reviewCount: entity.reviewCount,
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
