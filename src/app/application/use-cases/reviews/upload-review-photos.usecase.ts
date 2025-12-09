@@ -76,7 +76,7 @@ export class UploadReviewPhotosUseCase {
 
           if (result.success && result.data) {
             uploadedUrls.push(result.data.publicUrl);
-          } else {
+          } else if (!result.success) {
             console.error(`Failed to upload ${photo.fileName}:`, result.error);
             failedCount++;
           }

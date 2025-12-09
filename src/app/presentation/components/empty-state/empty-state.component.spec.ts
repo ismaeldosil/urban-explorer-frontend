@@ -3,8 +3,8 @@ import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
 import { EmptyStateComponent } from './empty-state.component';
 
-// TODO: Fix tests - Ionic component rendering
-xdescribe('EmptyStateComponent', () => {
+// Unit tests for component logic (no DOM queries)
+describe('EmptyStateComponent', () => {
   let component: EmptyStateComponent;
   let fixture: ComponentFixture<EmptyStateComponent>;
 
@@ -113,6 +113,22 @@ xdescribe('EmptyStateComponent', () => {
 
       expect(component.buttonClick.emit).toHaveBeenCalledTimes(3);
     });
+  });
+});
+
+// Template tests disabled due to Ionic shadow DOM issues
+xdescribe('EmptyStateComponent Template Tests', () => {
+  let component: EmptyStateComponent;
+  let fixture: ComponentFixture<EmptyStateComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [EmptyStateComponent, IonicModule.forRoot()],
+      schemas: [CUSTOM_ELEMENTS_SCHEMA]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(EmptyStateComponent);
+    component = fixture.componentInstance;
   });
 
   describe('Template Rendering - Basic Elements', () => {
