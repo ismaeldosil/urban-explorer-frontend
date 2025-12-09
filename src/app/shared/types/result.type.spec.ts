@@ -99,7 +99,7 @@ describe('Result Type', () => {
     });
 
     it('should work with custom error type', () => {
-      type CustomError = { code: string; details: string[] };
+      interface CustomError { code: string; details: string[] }
       const error: CustomError = { code: 'CUSTOM', details: ['detail1', 'detail2'] };
       const result = Result.fail<CustomError>(error);
 

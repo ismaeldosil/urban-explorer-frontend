@@ -15,11 +15,11 @@ import { IonicModule, Platform } from '@ionic/angular';
 import { Router } from '@angular/router';
 
 import { LocationEntity } from '@core/entities/location.entity';
-import { CapacitorGeolocationAdapter } from '@infrastructure/adapters/capacitor-geolocation.adapter';
 import { GetNearbyLocationsUseCase } from '@application/use-cases/locations/get-nearby-locations.usecase';
 import { Coordinates } from '@core/value-objects/coordinates.vo';
 import { LocationPreviewCardComponent } from '@presentation/components/location-preview-card';
 import { MapService } from '@infrastructure/services/map.service';
+import { GeolocationService } from '@infrastructure/services/geolocation.service';
 
 export interface Category {
   id: string;
@@ -39,7 +39,7 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
 
   private readonly router = inject(Router);
   private readonly platform = inject(Platform);
-  private readonly geolocationAdapter = inject(CapacitorGeolocationAdapter);
+  private readonly geolocationService = inject(GeolocationService);
   private readonly getNearbyLocationsUseCase = inject(GetNearbyLocationsUseCase);
   private readonly mapService = inject(MapService);
 
@@ -219,19 +219,19 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
     this.errorMessage.set(null);
     this.locationPermissionDenied.set(false);
 
-    try {
-      // First try with Capacitor adapter
-      const position = await this.geolocationAdapter.getCurrentPosition();
-      console.log('centerOnUser - Got position:', position.latitude, position.longitude);
+    const result = await this.geolocationService.getCurrentPosition();
 
-      this.userPosition.set(position);
-      // Use combined method for reliable centering
-      this.mapService.setCenterAndZoom(position, 15, true);
-      this.mapService.setUserLocation(position);
+    if (result.success) {
+      const coords = result.data.coordinates;
+      console.log('centerOnUser - Got position:', coords.latitude, coords.longitude);
 
-      await this.loadNearbyLocations(position.latitude, position.longitude);
-    } catch (error) {
-      console.error('Error getting location with Capacitor:', error);
+      this.userPosition.set(coords);
+      this.mapService.setCenterAndZoom(coords, 15, true);
+      this.mapService.setUserLocation(coords);
+
+      await this.loadNearbyLocations(coords.latitude, coords.longitude);
+    } else {
+      console.error('Error getting location:', result.error.message);
 
       // Fallback to browser API
       if ('geolocation' in navigator) {
@@ -251,7 +251,6 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
           console.log('centerOnUser - Got position from browser:', coords.latitude, coords.longitude);
 
           this.userPosition.set(coords);
-          // Use combined method for reliable centering
           this.mapService.setCenterAndZoom(coords, 15, true);
           this.mapService.setUserLocation(coords);
 
@@ -265,28 +264,33 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
         this.errorMessage.set('Tu navegador no soporta geolocalización.');
         this.locationPermissionDenied.set(true);
       }
-    } finally {
-      this.isLocating.set(false);
     }
+
+    this.isLocating.set(false);
   }
 
   private async initializeGeolocation(): Promise<void> {
     this.isLocating.set(true);
 
-    try {
-      // Use the Capacitor adapter which handles both web and native
-      const coords = await this.geolocationAdapter.getCurrentPosition();
+    const result = await this.geolocationService.getCurrentPosition();
+
+    if (result.success) {
+      const coords = result.data.coordinates;
       console.log('initializeGeolocation - Got user position:', coords.latitude, coords.longitude);
 
       this.userPosition.set(coords);
-      // Use combined method to set center AND zoom in one operation
-      this.mapService.setCenterAndZoom(coords, 15, false); // No animation for initial load
+      this.mapService.setCenterAndZoom(coords, 15, false);
       this.mapService.setUserLocation(coords);
       await this.loadNearbyLocations(coords.latitude, coords.longitude);
       this.isLocating.set(false);
-    } catch (error) {
-      console.warn('Geolocation error, using fallback:', error);
-      // Fallback: try browser's native geolocation API directly
+    } else {
+      console.warn('Geolocation error:', result.error.message);
+
+      if (result.error.code === 'PERMISSION_DENIED') {
+        this.locationPermissionDenied.set(true);
+      }
+
+      // Fallback to browser API
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -296,7 +300,6 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
             );
             console.log('initializeGeolocation - Got position from browser API:', coords.latitude, coords.longitude);
             this.userPosition.set(coords);
-            // Use combined method
             this.mapService.setCenterAndZoom(coords, 15, false);
             this.mapService.setUserLocation(coords);
             this.loadNearbyLocations(coords.latitude, coords.longitude);
@@ -305,7 +308,6 @@ export class ExplorePage implements OnInit, AfterViewInit, OnDestroy {
           (geoError) => {
             console.warn('Browser geolocation also failed:', geoError.message);
             this.locationPermissionDenied.set(true);
-            // Load default location (Montevideo)
             this.loadNearbyLocations(-34.9011, -56.1645);
             this.isLocating.set(false);
           },
