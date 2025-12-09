@@ -30,14 +30,14 @@
       </ion-button>
       <ion-select
         interface="action-sheet"
-        placeholder="Ordenar: Relevancia"
+        [placeholder]="'Ordenar: ' + getSortLabel(sortBy())"
         class="sort-select"
+        [value]="sortBy()"
+        (ionChange)="onSortChange($event)"
       >
         <ion-select-option value="relevance">Relevancia</ion-select-option>
         <ion-select-option value="distance">Cercanía</ion-select-option>
         <ion-select-option value="rating">Rating</ion-select-option>
-        <ion-select-option value="price_asc">Precio: menor a mayor</ion-select-option>
-        <ion-select-option value="price_desc">Precio: mayor a menor</ion-select-option>
       </ion-select>
     </ion-toolbar>
   }

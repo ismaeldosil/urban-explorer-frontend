@@ -11,7 +11,7 @@ import { IonicModule } from '@ionic/angular';
 
 import { LocationEntity } from '@core/entities/location.entity';
 import { GetNearbyLocationsUseCase } from '@application/use-cases/locations/get-nearby-locations.usecase';
-import { CapacitorGeolocationAdapter } from '@infrastructure/adapters/capacitor-geolocation.adapter';
+import { GeolocationService } from '@infrastructure/services/geolocation.service';
 import { Coordinates } from '@core/value-objects/coordinates.vo';
 import {
   LocationCardComponent,
@@ -168,7 +168,7 @@ export class LocationListPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly getNearbyLocationsUseCase = inject(GetNearbyLocationsUseCase);
-  private readonly geolocationAdapter = inject(CapacitorGeolocationAdapter);
+  private readonly geolocationService = inject(GeolocationService);
 
   // State
   readonly isLoading = signal(false);
@@ -250,13 +250,26 @@ export class LocationListPage implements OnInit {
 
     try {
       // Get user position
-      const position = await this.geolocationAdapter.getCurrentPosition();
-      this.userPosition.set(position);
+      const result = await this.geolocationService.getCurrentPosition();
+
+      let latitude: number;
+      let longitude: number;
+
+      if (result.success) {
+        const coords = result.data.coordinates;
+        this.userPosition.set(coords);
+        latitude = coords.latitude;
+        longitude = coords.longitude;
+      } else {
+        // Use default location (Montevideo)
+        latitude = -34.9011;
+        longitude = -56.1645;
+      }
 
       // Get nearby locations
       const locations = await this.getNearbyLocationsUseCase.execute({
-        latitude: position.latitude,
-        longitude: position.longitude,
+        latitude,
+        longitude,
         radiusKm: 10,
         limit: 50,
       });
