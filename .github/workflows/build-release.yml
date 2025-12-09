@@ -209,6 +209,9 @@ jobs:
           cd ios/App
           pod install
 
+      - name: List available simulators
+        run: xcrun simctl list devices available
+
       - name: Build iOS (Simulator)
         run: |
           cd ios/App
@@ -217,7 +220,7 @@ jobs:
             -configuration Release \
             -sdk iphonesimulator \
             -derivedDataPath build \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             build
 
