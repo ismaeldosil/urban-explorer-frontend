@@ -90,15 +90,30 @@ jobs:
           retention-days: 30
 
       - name: Check coverage threshold
+        id: coverage
         run: |
           COVERAGE=$(node -e "const fs = require('fs'); const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8')); const total = coverage.total; console.log(total.lines.pct);")
           echo "Coverage: $COVERAGE%"
+          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
           # Threshold reducido temporalmente durante desarrollo (objetivo: 80%)
           if (( $(echo "$COVERAGE < 15" | bc -l) )); then
             echo "ERROR: Coverage is below 15% threshold (current: $COVERAGE%)"
             exit 1
           fi
           echo "SUCCESS: Coverage meets 15% threshold"
+
+      - name: Create coverage badge
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_TOKEN }}
+          gistID: ${{ secrets.COVERAGE_GIST_ID }}
+          filename: coverage-badge.json
+          label: coverage
+          message: ${{ steps.coverage.outputs.coverage }}%
+          valColorRange: ${{ steps.coverage.outputs.coverage }}
+          maxColorRange: 100
+          minColorRange: 0
 
       - name: Comment coverage on PR
         if: github.event_name == 'pull_request'

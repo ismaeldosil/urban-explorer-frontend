@@ -2,9 +2,11 @@
 
 [![CI](https://github.com/ismaeldosil/urban-explorer-frontend/actions/workflows/ci.yml/badge.svg)](https://github.com/ismaeldosil/urban-explorer-frontend/actions/workflows/ci.yml)
 [![Release](https://github.com/ismaeldosil/urban-explorer-frontend/actions/workflows/release.yml/badge.svg)](https://github.com/ismaeldosil/urban-explorer-frontend/actions/workflows/release.yml)
+[![Coverage](https://img.shields.io/badge/coverage-93%25-brightgreen)](https://github.com/ismaeldosil/urban-explorer-frontend/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-850%20passing-brightgreen)](https://github.com/ismaeldosil/urban-explorer-frontend/actions/workflows/ci.yml)
 [![Ionic](https://img.shields.io/badge/Ionic-8.0-3880FF?logo=ionic&logoColor=white)](https://ionicframework.com/)
-[![Angular](https://img.shields.io/badge/Angular-20-DD0031?logo=angular&logoColor=white)](https://angular.io/)
-[![Capacitor](https://img.shields.io/badge/Capacitor-7.0-119EFF?logo=capacitor&logoColor=white)](https://capacitorjs.com/)
+[![Angular](https://img.shields.io/badge/Angular-18-DD0031?logo=angular&logoColor=white)](https://angular.io/)
+[![Capacitor](https://img.shields.io/badge/Capacitor-6.0-119EFF?logo=capacitor&logoColor=white)](https://capacitorjs.com/)
 
 > Mobile app for Urban Explorer - Gamified urban exploration
 
