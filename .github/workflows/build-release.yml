@@ -271,12 +271,14 @@ jobs:
 
   # ============================================
   # Create GitHub Release
+  # NOTE: Disabled because release.yml already handles this
+  # This workflow focuses only on building artifacts
   # ============================================
   create-release:
     name: Create Release
     needs: [build-web, build-android, build-ios]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: false  # Disabled - release.yml handles GitHub releases
 
     steps:
       - name: Checkout
